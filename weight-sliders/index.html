@@ -223,6 +223,17 @@ html.pointer-mode .ball:focus-visible, html.pointer-mode #s-vol .ball:focus-visi
 .btn.icon .i-sun { display: none; }
 :root[data-theme="dark"] .btn.icon .i-sun { display: block; } :root[data-theme="dark"] .btn.icon .i-moon { display: none; }
 body, .list, .srow, .dock, .btn, .spec { transition: background-color 320ms ease, color 320ms ease, box-shadow 320ms ease; }
+/* Dark: neutral greys, no blue. Fills go mid-grey so the white thumb and number read on top, as in the reference. */
+:root[data-theme="dark"] { --bg: #121212; --card: #282828; --panel: #303030; --panel-line: rgba(255, 255, 255, 0.02); --rail: #3b3b3b; --line: #3a3a3a; --press: #3a3a3a;
+    --ink: #f5f5f5; --muted: #9b9b9b; --stop: #8a8a8a; --fill-a: #6f6f6f; --fill-b: #6f6f6f;
+    --solid: #f2f2f2; --tip-bg: #f2f2f2; --tip-ink: #121212; --ball-shadow: 0, 0, 0;
+    --card-shadow: 0 0 0 1px rgba(255, 255, 255, 0.03); color-scheme: dark; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme]) { --bg: #121212; --card: #282828; --panel: #303030; --panel-line: rgba(255, 255, 255, 0.02); --rail: #3b3b3b; --line: #3a3a3a; --press: #3a3a3a;
+    --ink: #f5f5f5; --muted: #9b9b9b; --stop: #8a8a8a; --fill-a: #6f6f6f; --fill-b: #6f6f6f;
+    --solid: #f2f2f2; --tip-bg: #f2f2f2; --tip-ink: #121212; --ball-shadow: 0, 0, 0;
+    --card-shadow: 0 0 0 1px rgba(255, 255, 255, 0.03); color-scheme: dark; } }
+:root[data-theme="dark"] .stops > span { color: #8a8a8a; }
+:root[data-theme="dark"] .stops > span.on { color: var(--ink); }
 </style>
 
 <main class="page">
@@ -361,17 +372,18 @@ body, .list, .srow, .dock, .btn, .spec { transition: background-color 320ms ease
         <dt>Beam</dt><dd>pivot in the middle; level when left alone, wherever the ball is</dd>
         <dt>Hover</dt><dd>follows the pointer: level under the middle, up to 2.5° toward either end; only the beam and its step labels move; the ball grips up to 3°, so hovering never changes the value</dd>
         <dt>Press a side</dt><dd>hold anywhere off the ball: that side tips 3.4° at once, then 3°/s, ≤ 7°; the ball rolls downhill (g 2600 · sin θ, rolling friction), bumps the ends; let go and the beam levels and the ball rolls to a stop</dd>
-        <dt>Steps</dt><dd>Usage data settles into the nearest step; rolling into Enhanced takes 0.2 s of push, into Full 0.5 s</dd>
+        <dt>Steps</dt><dd>one press, one step: the next dot is a wall; the ball rolls into it, bounces back (45%) and rests against it; press again to go on. Full also needs 0.5 s of push at its gate</dd>
         <dt>Drag the ball</dt><dd>still a normal slider; set down off-centre, the beam rocks once and levels</dd>
       </dl></div>
       <div class="spec-group"><h3>Dark mode</h3><dl>
         <dt>Switch</dt><dd>moon / sun, 38 round, first in the dock; follows the system until you choose; remembered</dd>
-        <dt>Page</dt><dd><i style="background:#0f1012"></i>#0F1012</dd>
-        <dt>Card</dt><dd><i style="background:#202226"></i>#202226, shadow 0 22 44 −14 · 70%</dd>
-        <dt>Row panel</dt><dd><i style="background:#18191c"></i>#18191C, inner line white 5%</dd>
-        <dt>Rail</dt><dd><i style="background:#2c2e33"></i>#2C2E33</dd>
-        <dt>Fill · thumb · number</dt><dd><i style="background:#eeeff1"></i>#EEEFF1 (the dark ink flips to light)</dd>
-        <dt>Text</dt><dd><i style="background:#eeeff1"></i>#EEEFF1 · muted <i style="background:#9a9ea5"></i>#9A9EA5</dd>
+        <dt>Page</dt><dd><i style="background:#121212"></i>#121212</dd>
+        <dt>Card</dt><dd><i style="background:#282828"></i>#282828, no shadow, 1 line white 3%</dd>
+        <dt>Row panel</dt><dd><i style="background:#303030"></i>#303030</dd>
+        <dt>Rail</dt><dd><i style="background:#3b3b3b"></i>#3B3B3B</dd>
+        <dt>Fill</dt><dd><i style="background:#6f6f6f"></i>#6F6F6F (mid grey, so the thumb reads on it)</dd>
+        <dt>Thumb · number</dt><dd><i style="background:#f2f2f2"></i>#F2F2F2, number text #121212</dd>
+        <dt>Text</dt><dd><i style="background:#f5f5f5"></i>#F5F5F5 · muted <i style="background:#9b9b9b"></i>#9B9B9B · steps #8A8A8A</dd>
         <dt>Change</dt><dd>colours ease over 320 ms</dd>
       </dl></div>
       <div class="spec-group"><h3>Motion</h3><dl>
@@ -605,7 +617,7 @@ body, .list, .srow, .dock, .btn, .spec { transition: background-color 320ms ease
       s.ball.focus({ preventScroll: true });
       const p = local(s, e);
       s.grab = e.target === s.ball ? s.bx.x - p.x : 0;
-      s.push = s.d.mode === 'balance' && e.target !== s.ball && Math.abs(p.x - s.bx.x) > 14 ? { dir: p.x < W / 2 ? -1 : 1, t: 0 } : null;
+      s.push = s.d.mode === 'balance' && e.target !== s.ball && Math.abs(p.x - s.bx.x) > 14 ? { dir: p.x < W / 2 ? -1 : 1, t: 0, from: s.value } : null;
       s.rawX = clamp(p.x + s.grab, X0, X1);
       s.downX = e.clientX;
       s.pressed = true; s.dragging = false; s.falling = false; s.carrying = false;
@@ -857,20 +869,25 @@ body, .list, .srow, .dock, .btn, .spec { transition: background-color 320ms ease
           else {
             s.rollV += (g - Math.sign(s.rollV || g) * MU * 0.9 - 2.6 * s.rollV) * dt;
             let nx = s.bx.x + s.rollV * dt;
-            if (s.stepped) {                         // the same steps as dragging: Enhanced takes 0.2 s of push, Full 0.5 s
-              const walls = [];
-              if (d.detent != null && !s.detentOpen) walls.push({ x: (s.SX[d.detent - 1] + s.SX[d.detent]) / 2 - 4, need: 0.2, key: 'detent' });
-              if (d.gate != null && !s.gateOpen) walls.push({ x: (s.SX[d.gate - 1] + s.SX[d.gate]) / 2 - 8, need: 0.5, key: 'gate' });
-              const w = walls.sort((a2, b2) => a2.x - b2.x)[0];
-              if (w && nx > w.x && s.rollV > 0) {
-                nx = w.x; s.rollV = 0;
-                if (s.push && s.push.dir > 0) {
-                  s.wallT = (s.wallT || 0) + dt;
-                  if (w.key === 'gate') say(s.wallT < 0.5 ? 'Keep holding…' : '', true);
-                  if (s.wallT >= w.need) { if (w.key === 'detent') s.detentOpen = true; else { s.gateOpen = true; say('', false); } s.wallT = 0; s.tilt.v += 3; }
-                }
-              } else s.wallT = 0;
-              if (d.detent != null && s.detentOpen && nx < (s.SX[d.detent - 1] + s.SX[d.detent]) / 2 - 24) s.detentOpen = false;
+            if (s.stepped) {
+              // One press, one step: the next dot is a wall. The ball rolls into it, bounces back, and rests against it;
+              // to go further you press again. Full also asks you to keep pushing at its gate for 0.5 s.
+              const pdir = s.push ? s.push.dir : s.lastDir;
+              if (s.push) { s.lastDir = s.push.dir; s.target = clamp(s.push.from + s.push.dir, 0, s.SX.length - 1); }
+              if (s.target != null && pdir) {
+                let wx = s.SX[s.target], hold = 0;
+                if (d.gate != null && !s.gateOpen && s.target >= d.gate && pdir > 0) { wx = (s.SX[d.gate - 1] + s.SX[d.gate]) / 2 - 8; hold = 0.5; }
+                const hit = pdir > 0 ? nx > wx && s.rollV > 0 : nx < wx && s.rollV < 0;
+                if (hit) {
+                  nx = wx;
+                  s.rollV = Math.abs(s.rollV) > 40 ? -s.rollV * 0.45 : 0;      // knocks against it and bounces back
+                  if (!hold) { if (Math.abs(s.rollV) > 0 && !REDUCE) { s.tilt.v += -pdir * 1.5; s.card.dip.v += 3; } s.reached = s.target; }
+                  else if (s.push && s.push.dir > 0) {
+                    s.wallT = (s.wallT || 0) + dt; say(s.wallT < 0.5 ? 'Keep holding…' : '', true);
+                    if (s.wallT >= hold) { s.gateOpen = true; s.wallT = 0; say('', false); }
+                  }
+                } else if (!hold) s.wallT = 0;
+              }
               if (d.gate != null && s.gateOpen && nx < (s.SX[d.gate - 1] + s.SX[d.gate]) / 2 - 30) s.gateOpen = false;
             }
             if (nx <= X0) { nx = X0; s.rollV = -s.rollV * 0.25; }
@@ -879,11 +896,11 @@ body, .list, .srow, .dock, .btn, .spec { transition: background-color 320ms ease
             if (!s.stepped) { s.value = clamp((nx - X0) / (X1 - X0), 0, 1); s.tx = nx; syncAria(s); }
             else s.labels.forEach((l, i) => l.el.classList.toggle('on', i === nearest(nx, s)));
           }
-          if (s.stepped && !s.push && s.rollV === 0 && Math.abs(s.bx.x - s.SX[s.value]) > 0.5 && !s.carrying && !s.falling) {
-            let i = nearest(s.bx.x, s);
+          if (s.stepped && !s.push && s.rollV === 0 && !s.carrying && !s.falling && (s.target != null || Math.abs(s.bx.x - s.SX[s.value]) > 0.5)) {
+            let i = s.reached != null ? s.reached : nearest(s.bx.x, s);       // it settles into the dot it reached
             if (d.gate != null && !s.gateOpen && i >= d.gate) i = d.gate - 1;
-            if (d.detent != null && !s.detentOpen && i >= d.detent) i = d.detent - 1;
-            land(s, i);
+            s.reached = null; s.target = null; s.lastDir = 0;
+            if (i !== s.value || Math.abs(s.bx.x - s.SX[i]) > 0.5) land(s, i);
           }
         }
         s.rolling = s.rollV !== 0;
