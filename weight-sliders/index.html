@@ -328,6 +328,7 @@ html.pointer-mode .ball:focus-visible, html.pointer-mode #s-vol .ball:focus-visi
         <dt>Enhanced</dt><dd>a detent: the ball sticks at the edge and gives only ¼ of the pull, trembling, until the hand is 18 past; then it pops through</dd>
         <dt>Full</dt><dd>hold 500 ms at the gate; tap teases</dd>
         <dt>Hover · test press</dt><dd>pointer on the track (not the ball): the lever (rigid, no dent) leans up to +1.1° as if pressed there</dd>
+        <dt>Tether</dt><dd>the fill is a rubber band tied to the 0 end: stroke 6 → 1.5 as it stretches, live while you drag; while held the ball trails the hand on the band (spring k 520, c 24; pulled back ≤ 10, more the further out) and springs up to it when the hand stops; brushing it plucks it (1.4–3.4), letting go twangs it (2–5.5); pitch 7 → 18 Hz with tension, dies in ≈ 0.3 s</dd>
         <dt>Drag</dt><dd>the ball stays on the lever (lifted 3 like every thumb); release sets it down with a small knock</dd>
         <dt>Drag · slope</dt><dd>continuous only: set down, it rolls 12 + 28 × value px further out (≈ 4–15 km), friction 300 px/s²</dd>
         <dt>Letters</dt><dd>loose, as in Week 3: the labels' letters slide downhill with the card's tilt (20 px per degree, 0.12° friction, each letter its own grip 0.04–0.26° and weight ×0.7–1.3), pile against a wall at the end of the longest label, knock (40%), tumble ≤ 2.5°, follow the card 0.25 s late, drift home when it levels</dd>
@@ -539,7 +540,13 @@ html.pointer-mode .ball:focus-visible, html.pointer-mode #s-vol .ball:focus-visi
   function wire(s) {
     s.el.addEventListener('pointerenter', () => { s.hover = true; });
     s.el.addEventListener('pointerleave', () => { s.hover = false; s.hx = null; });
-    s.el.addEventListener('pointermove', (e) => { if (s.d.kind === 'lever') s.hx = clamp(local(s, e).x, X0, X1); });
+    s.el.addEventListener('pointermove', (e) => {
+      if (s.d.kind !== 'lever') return;
+      s.hx = clamp(local(s, e).x, X0, X1);
+      const inBand = s.hx < s.bx.x - 10 && !s.pressed;
+      if (inBand && !s.inBand) twang(s, 1.4 + 2 * contV(s));                   // brushing the band plucks it
+      s.inBand = inBand;
+    });
     s.el.addEventListener('pointerdown', (e) => {
       if (e.button !== 0) return;
       e.preventDefault();
@@ -575,7 +582,7 @@ html.pointer-mode .ball:focus-visible, html.pointer-mode #s-vol .ball:focus-visi
       } else {
         s.value = clamp((s.rawX - X0) / (X1 - X0), 0, 1);
         syncAria(s);
-        if (s.d.kind === 'lever' && wasDrag && !REDUCE) { s.falling = true; s.impacted = false; s.lift.v = 0; s.rollNext = true; }
+        if (s.d.kind === 'lever' && wasDrag && !REDUCE) { s.falling = true; s.impacted = false; s.lift.v = 0; s.rollNext = true; twang(s, 2 + 3.5 * contV(s)); }
       }
     };
     s.el.addEventListener('pointerup', up);
@@ -644,6 +651,7 @@ html.pointer-mode .ball:focus-visible, html.pointer-mode #s-vol .ball:focus-visi
     s.lift.x = 0; s.lift.v = -vy;
     s.sag.v -= 50 + 90 * m;                         // the snap: harder for a heavier ball
   }
+  function twang(s, A) { if (!REDUCE) s.tw = { t0: s.time, A }; }
   function impact(s, vy) {
     const w = stopW(s);
     if (REDUCE) { if (s.d.kind === 'pill') seatPill(s, true); return; }
@@ -753,7 +761,9 @@ html.pointer-mode .ball:focus-visible, html.pointer-mode #s-vol .ball:focus-visi
       const u = Math.min(1, fl.t / fl.T);
       s.bx.x = fl.x0 + (fl.x1 - fl.x0) * u; s.bx.v = (fl.x1 - fl.x0) / fl.T;
       if (u >= 1) { s.flight = null; s.bx.v = 0; }
-    } else if (s.windup) { s.bx.v = 0; } else if (s.roll) { /* rolling */ } else spring(s.bx, tx, 1600, 80, dt);
+    } else if (s.windup) { s.bx.v = 0; } else if (s.roll) { /* rolling */ }
+    else if (d.kind === 'lever' && s.pressed && !s.stepped) spring(s.bx, tx - 10 * contV(s), 520, 24, dt);   // held on a band: it trails the hand (more the further out), and springs up to it when the hand stops
+    else spring(s.bx, tx, 1600, 80, dt);
 
     // Stepped: during drag, preview the nearest stop's label. On release, carry then drop.
     if (s.stepped) {
@@ -890,6 +900,19 @@ html.pointer-mode .ball:focus-visible, html.pointer-mode #s-vol .ball:focus-visi
     const toD = (a) => 'M' + a.map((p) => p[0].toFixed(2) + ' ' + p[1].toFixed(2)).join('L');
     s.rail.setAttribute('d', toD(pts));
     if (s.d.kind !== 'beads') s.fill.setAttribute('d', fillPts.length > 1 ? toD(fillPts) : `M${L0} ${CY}L${L0 + 0.01} ${CY}`);
+    if (s.d.kind === 'lever') {
+      // The fill is a rubber band tied to the 0 end: the further out, the more it stretches, the thinner and tighter it is.
+      const t = contV(s), span = Math.max(1, bxp - L0);
+      let vib = () => 0;
+      if (s.tw) {
+        const age = s.time - s.tw.t0, f = 7 + 11 * t, a = s.tw.A * Math.exp(-age / 0.32) * Math.sin(2 * Math.PI * f * age);
+        if (age > 1.4) s.tw = null; else vib = (x) => a * Math.sin(Math.PI * clamp((x - L0) / span, 0, 1));
+      }
+      const band = [];
+      for (let i = 0; i <= 24; i++) { const x = L0 + span * i / 24; band.push([x, trackY(s, x) + vib(x)]); }
+      s.fill.setAttribute('d', toD(band));
+      s.fill.style.strokeWidth = (6 - 4.5 * t).toFixed(2);
+    }
     s.dots.forEach((c, i) => { c.setAttribute('cx', s.SX[i]); c.setAttribute('cy', trackY(s, s.SX[i])); c.classList.toggle('under', s.SX[i] < bxp - 1); });
     s.beads.forEach((b) => { b.el.style.display = b.on ? '' : 'none'; if (b.on) { b.el.setAttribute('cx', b.x); b.el.setAttribute('cy', (trackY(s, b.x) + b.y).toFixed(2)); } });
 
