@@ -112,6 +112,12 @@ body { margin: 0; background: var(--bg); color: var(--ink); font: 400 15px/1.5 v
 .spec-group[data-for] { display: none; }
 .spec[data-slide="0"] .spec-group[data-for="0"], .spec[data-slide="1"] .spec-group[data-for="1"], .spec[data-slide="2"] .spec-group[data-for="2"] { display: block; }
 #spec-btn[aria-expanded="true"] { background: var(--ink); color: var(--bg); box-shadow: none; }
+
+/* Focus rings are for the keyboard only: a mouse or touch press never draws one. */
+html.pointer-mode *:focus, html.pointer-mode *:focus-visible, html.pointer-mode .check:focus-within { outline: none !important; }
+html.pointer-mode .ruler:focus-visible { box-shadow: none; }
+html.pointer-mode .ball:focus-visible { box-shadow: 0 0 0 3px var(--card), var(--sh, 0 1px 3px rgba(var(--ball-shadow), 0.22)); }
+html.pointer-mode #s-vol .ball:focus-visible { box-shadow: 0 0 0 2px var(--card), var(--sh, 0 1px 3px rgba(var(--ball-shadow), 0.22)); }
 </style>
 
 <main class="page">
@@ -1139,4 +1145,12 @@ body { margin: 0; background: var(--bg); color: var(--ink); font: 400 15px/1.5 v
   addEventListener('resize', alignNav);
   go(0); alignNav(); requestAnimationFrame(alignNav);
 })();
+</script>
+
+<script>
+  (() => {
+    const root = document.documentElement;
+    addEventListener('pointerdown', () => root.classList.add('pointer-mode'), true);
+    addEventListener('keydown', (e) => { if (!e.metaKey && !e.ctrlKey && !e.altKey) root.classList.remove('pointer-mode'); }, true);
+  })();
 </script>
