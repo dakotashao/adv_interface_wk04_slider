@@ -1089,6 +1089,7 @@ body { margin: 0; background: var(--bg); color: var(--ink); font: 400 15px/1.5 v
     idx = Math.max(0, Math.min(N - 1, i));
     track.style.transform = `translateX(${-idx * 100}%)`;
     [...track.children].forEach((sl, k) => { sl.inert = k !== idx; sl.setAttribute('aria-hidden', k !== idx); });
+    alignNav();
     prevB.disabled = idx === 0; nextB.disabled = idx === N - 1;
     spec.dataset.slide = idx;
     document.getElementById('spec-sub').textContent = 'px at 1× · ' + track.children[idx].querySelector('.group-label').textContent;
@@ -1127,6 +1128,15 @@ body { margin: 0; background: var(--bg); color: var(--ink); font: 400 15px/1.5 v
   specBtn.addEventListener('click', () => setSpec(spec.hidden));
   document.getElementById('spec-close').addEventListener('click', () => setSpec(false));
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape') setSpec(false); });
-  go(0);
+  // The arrows sit level with the middle of the bar, not the middle of the screen.
+  const alignNav = () => {
+    const bar = track.children[idx].querySelector('.ruler');
+    if (!bar) return;
+    const r = bar.getBoundingClientRect(), sr = stage.getBoundingClientRect();
+    const y = (r.top + r.height / 2 - sr.top).toFixed(1) + 'px';
+    prevB.style.top = nextB.style.top = y;
+  };
+  addEventListener('resize', alignNav);
+  go(0); alignNav(); requestAnimationFrame(alignNav);
 })();
 </script>
