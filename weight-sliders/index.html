@@ -1061,7 +1061,7 @@ body, .list, .srow, .dock, .btn, .spec { transition: background-color 320ms ease
       const m = clamp(s.morph.x, 0, 1.15), sx = (12 + (w - 12) * m) / w, sy = (12 + 12 * m) / 24;   // m 0: the 12 ball, 1: the number
       s.numb.style.transform = `translate(${(bxp - w / 2).toFixed(2)}px, ${(by - 12 + s.nl.x).toFixed(2)}px) translate(${(w / 2).toFixed(2)}px, 24px) rotate(${s.nRot.x.toFixed(2)}deg) translate(0, -12px) scale(${sx.toFixed(3)}, ${sy.toFixed(3)}) translate(${(-w / 2).toFixed(2)}px, -12px)`;
       s.numb.style.color = m < 0.6 ? 'transparent' : '';
-      s.numb.style.boxShadow = `0 0 0 2px var(--panel), 0 ${(1 + up * 5).toFixed(1)}px ${(2 + up * 10).toFixed(1)}px rgba(var(--ball-shadow), ${(0.12 + up * 0.1).toFixed(3)})`;
+      s.numb.style.boxShadow = `0 0 0 2px var(--panel), 0 ${(1 + up * 5).toFixed(1)}px ${(2 + up * 10).toFixed(1)}px ${(-1 - up * 4).toFixed(1)}px rgba(var(--ball-shadow), ${(0.14 + up * 0.12).toFixed(3)})`;   // shadow tucked inside the ring: the ring always reads as the background
     }
     // Pill
     if (s.pill) {
