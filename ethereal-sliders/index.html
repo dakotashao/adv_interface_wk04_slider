@@ -130,7 +130,7 @@
         <div class="demo">
           <p class="group-label">Surface · Stepped</p>
           <div class="list">
-            <div class="srow"><div class="head"><span class="label">Current</span><span class="unit" data-for="s1"></span></div><div class="slot words"></div></div>
+            <div class="srow"><div class="head"><span class="label">Rain</span><span class="unit" data-for="s1"></span></div><div class="slot words"></div></div>
             <svg id="stage1" viewBox="0 0 520 166" aria-label="Liquid sliders">
       <defs>
         <filter id="a_gooW" filterUnits="userSpaceOnUse" x="-60" y="-90" width="640" height="460" color-interpolation-filters="sRGB">
@@ -166,7 +166,7 @@
         <div class="demo">
           <p class="group-label">Surface · Continuous</p>
           <div class="list">
-            <div class="srow"><div class="head"><span class="label">Depth</span><span class="unit" data-for="s2"></span></div><div class="slot"></div></div>
+            <div class="srow"><div class="head"><span class="label">Volume</span><span class="unit" data-for="s2"></span></div><div class="slot"></div></div>
             <svg id="stage2" viewBox="0 0 520 166" aria-label="Liquid sliders">
       <defs>
         <filter id="c_gooW" filterUnits="userSpaceOnUse" x="-60" y="-90" width="640" height="460" color-interpolation-filters="sRGB">
@@ -202,7 +202,7 @@
         <div class="demo">
           <p class="group-label">Parting · Stepped</p>
           <div class="list">
-            <div class="srow"><div class="head"><span class="label">Current</span><span class="unit" data-for="s3"></span></div><div class="slot words"></div></div>
+            <div class="srow"><div class="head"><span class="label">Fade out</span><span class="unit" data-for="s3"></span></div><div class="slot words"></div></div>
             <svg id="stage3" viewBox="0 0 520 166" aria-label="Liquid sliders">
       <defs>
         <filter id="b_gooW" filterUnits="userSpaceOnUse" x="-60" y="-90" width="640" height="460" color-interpolation-filters="sRGB">
@@ -238,7 +238,7 @@
         <div class="demo">
           <p class="group-label">Parting · Continuous</p>
           <div class="list">
-            <div class="srow"><div class="head"><span class="label">Depth</span><span class="unit" data-for="s4"></span></div><div class="slot"></div></div>
+            <div class="srow"><div class="head"><span class="label">Sleep timer</span><span class="unit" data-for="s4"></span></div><div class="slot"></div></div>
             <svg id="stage4" viewBox="0 0 520 166" aria-label="Liquid sliders">
       <defs>
         <filter id="d_gooW" filterUnits="userSpaceOnUse" x="-60" y="-90" width="640" height="460" color-interpolation-filters="sRGB">
@@ -320,7 +320,7 @@
       </dl></div>
 
       <div class="spec-group" data-for="0"><h3>Surface · Stepped</h3><dl>
-        <dt>Type</dt><dd>stepped, 5 values</dd>
+        <dt>Controls</dt><dd>rain intensity: Off · Drizzle · Light · Steady · Heavy</dd>
         <dt>Steps</dt><dd>pitch 77, dot ⌀ 4, #A9AFBA · passed #2F74F4</dd>
         <dt>Body</dt><dd>46 × 28, radius 14</dd>
         <dt>Hover</dt><dd>tooltip rises from the step under the pointer</dd>
@@ -329,7 +329,7 @@
         <dt>Release</dt><dd>rear springs across, small overshoot</dd>
       </dl></div>
       <div class="spec-group" data-for="1"><h3>Surface · Continuous</h3><dl>
-        <dt>Type</dt><dd>continuous, 0–100 %</dd>
+        <dt>Controls</dt><dd>volume, 0–100 %</dd>
         <dt>Head</dt><dd>30 × 28, radius 14</dd>
         <dt>Hover</dt><dd>tooltip shows the value under the pointer</dd>
         <dt>Pressed</dt><dd>value jumps to the pointer; head swells 1.5</dd>
@@ -348,6 +348,7 @@
         <dt>Hover</dt><dd>glass necks in 8.5 under the pointer; water gained at 26%, lost washed 62%; tooltip shows that value</dd>
         <dt>Pressed</dt><dd>neck snaps into the new cut (gap 2 → 16); old cut heals; cut-off water beads away (520 ms)</dd>
         <dt>Drag · continuous</dt><dd>cut 1:1; water's edge rides the face, bulk lags (k 110 ζ 0.5)</dd>
+        <dt>Controls</dt><dd>stepped: fade out Off · 15s · 30s · 1m · 2m — continuous: sleep timer 0–60 min (sound stops at the cut)</dd>
         <dt>Drag · stepped</dt><dd>5 seams, pitch 80; tension builds as a neck at the next seam, snaps at half a step</dd>
         <dt>Release</dt><dd>water sloshes once and settles</dd>
       </dl></div>
@@ -586,9 +587,9 @@
   const blob = (e, s, disp) => e.setAttribute('d', s ? capsule(s.x - s.w / 2, s.x + s.w / 2, s.y, s.h / 2, Math.min(s.rx, s.w / 2), Math.min(s.rx, s.w / 2), null, disp, 1.5) : '');
 
   /* ───────── 01 · STEPPED ───────── */
-  const WORDS = ['Still', 'Drift', 'Flow', 'Tide', 'Surge'];
+  const WORDS = ['Off', 'Drizzle', 'Light', 'Steady', 'Heavy'];
   const YS = 90, XS = WORDS.map((_, i) => X0 + 46 + i * (X1 - X0 - 92) / (WORDS.length - 1)), HALF = (XS[1] - XS[0]) / 2;
-  const st = { el: scaffold(YS, '01  STEPPED', 'Current, stepped'), idx: 2, p: XS[2], hover: false, drag: false, ripples: [], keyT: -1e9, leftT: -1e9, hy: 0, gl: { x: 0, y: 0, o: 0 }, hx: 0, hxS: XS[2], W: {} };
+  const st = { el: scaffold(YS, '01  STEPPED', 'Rain, stepped'), idx: 2, p: XS[2], hover: false, drag: false, ripples: [], keyT: -1e9, leftT: -1e9, hy: 0, gl: { x: 0, y: 0, o: 0 }, hx: 0, hxS: XS[2], W: {} };
   st.front = spring(XS[2], 1500, .72); st.rear = spring(XS[2], 300, .42); st.lift = spring(0, 300, .8);
   st.dots = XS.map(x => mk('circle', { class: 'dot', cx: x, cy: YS, r: 2 }, st.el.under));
   st.words = XS.map((x, i) => { const t = mk('text', { class: 'word', x, y: YS + H / 2 + 18 }, svg); t.textContent = WORDS[i]; return t; });
@@ -616,7 +617,7 @@
 
   /* ───────── 02 · CONTINUOUS ───────── */
   const YC = 90, CA = X0 + 24, CB = X1 - 24;
-  const ct = { el: scaffold(YC, '02  CONTINUOUS', 'Depth, continuous'), v: 42, hover: false, drag: false, ripples: [], keyT: -1e9, leftT: -1e9, hy: 0, gl: { x: 0, y: 0, o: 0 }, hx: 0, hxS: 0, live: true, digits: true };
+  const ct = { el: scaffold(YC, '02  CONTINUOUS', 'Volume, continuous'), v: 42, hover: false, drag: false, ripples: [], keyT: -1e9, leftT: -1e9, hy: 0, gl: { x: 0, y: 0, o: 0 }, hx: 0, hxS: 0, live: true, digits: true };
   const vx = v => mix(CA, CB, v / 100);
   ct.hxS = vx(42);
   ct.front = spring(vx(42), 1700, .8); ct.rear = spring(vx(42), 220, .78); ct.lift = spring(0, 300, .8);
@@ -901,9 +902,9 @@
   const blob = (e, s, disp) => e.setAttribute('d', s ? capsule(s.x - s.w / 2, s.x + s.w / 2, s.y, s.h / 2, Math.min(s.rx, s.w / 2), Math.min(s.rx, s.w / 2), null, disp, 1.5) : '');
 
   /* ───────── 01 · STEPPED ───────── */
-  const WORDS = ['Still', 'Drift', 'Flow', 'Tide', 'Surge'];
+  const WORDS = ['Off', 'Drizzle', 'Light', 'Steady', 'Heavy'];
   const YS = 90, XS = WORDS.map((_, i) => X0 + 46 + i * (X1 - X0 - 92) / (WORDS.length - 1)), HALF = (XS[1] - XS[0]) / 2;
-  const st = { el: scaffold(YS, '01  STEPPED', 'Current, stepped'), idx: 2, p: XS[2], hover: false, drag: false, ripples: [], keyT: -1e9, leftT: -1e9, hy: 0, gl: { x: 0, y: 0, o: 0 }, hx: 0, hxS: XS[2], W: {} };
+  const st = { el: scaffold(YS, '01  STEPPED', 'Rain, stepped'), idx: 2, p: XS[2], hover: false, drag: false, ripples: [], keyT: -1e9, leftT: -1e9, hy: 0, gl: { x: 0, y: 0, o: 0 }, hx: 0, hxS: XS[2], W: {} };
   st.front = spring(XS[2], 1500, .72); st.rear = spring(XS[2], 300, .42); st.lift = spring(0, 300, .8);
   st.dots = XS.map(x => mk('circle', { class: 'dot', cx: x, cy: YS, r: 2 }, st.el.under));
   st.words = XS.map((x, i) => { const t = mk('text', { class: 'word', x, y: YS + H / 2 + 18 }, svg); t.textContent = WORDS[i]; return t; });
@@ -931,7 +932,7 @@
 
   /* ───────── 02 · CONTINUOUS ───────── */
   const YC = 90, CA = X0 + 24, CB = X1 - 24;
-  const ct = { el: scaffold(YC, '02  CONTINUOUS', 'Depth, continuous'), v: 42, hover: false, drag: false, ripples: [], keyT: -1e9, leftT: -1e9, hy: 0, gl: { x: 0, y: 0, o: 0 }, hx: 0, hxS: 0, live: true, digits: true };
+  const ct = { el: scaffold(YC, '02  CONTINUOUS', 'Volume, continuous'), v: 42, hover: false, drag: false, ripples: [], keyT: -1e9, leftT: -1e9, hy: 0, gl: { x: 0, y: 0, o: 0 }, hx: 0, hxS: 0, live: true, digits: true };
   const vx = v => mix(CA, CB, v / 100);
   ct.hxS = vx(42);
   ct.front = spring(vx(42), 1700, .8); ct.rear = spring(vx(42), 220, .78); ct.lift = spring(0, 300, .8);
@@ -1229,7 +1230,7 @@
   const PA = X0 + 40, PB = X1 - 40;
   function makeParting(Y, label, aria, opt) {
     const steps = opt.words || null, xs = steps ? steps.map((_, i) => mix(PA, PB, i / (steps.length - 1))) : null;
-    const pos = v => steps ? xs[v] : mix(PA, PB, v / 100);
+    const MAX = opt.max || 100, pos = v => steps ? xs[v] : mix(PA, PB, v / MAX);
     const nearest = x => xs.reduce((b, v, i) => Math.abs(v - x) < Math.abs(xs[b] - x) ? i : b, 0);
     const v0 = opt.start, x0 = pos(v0);
     const S = base(Y, label, aria, {
@@ -1261,8 +1262,8 @@
       S.nudge = k => { go(clamp(S.v + Math.sign(k) * (Math.abs(k) > 99 ? 99 : Math.abs(k) > 1 ? 2 : 1), 0, steps.length - 1)); S.keyT = CLOCK(); };
     } else {
       S.press = x => { if (Math.abs(x - S.cut.x) >= 22) S.jump(clamp(x, PA, PB)); };
-      S.move = x => { S.v = Math.round(c01(x, PA, PB) * 100); sync(); };
-      S.nudge = k => { S.v = clamp(S.v + (Math.abs(k) > 99 ? Math.sign(k) * 100 : Math.abs(k) > 1 ? k / 3 * 10 : k), 0, 100); S.keyT = CLOCK(); sync(); };
+      S.move = x => { S.v = Math.round(c01(x, PA, PB) * MAX); sync(); };
+      S.nudge = k => { S.v = clamp(S.v + (Math.abs(k) > 99 ? Math.sign(k) * MAX : Math.abs(k) > 1 ? k / 3 * 5 : k), 0, MAX); S.keyT = CLOCK(); sync(); };
     }
     S.release = () => S.ripples.push({ x: pos(S.v), t0: CLOCK(), a: 2.2 });
     S.text = v => steps ? steps[v] : String(v);
@@ -1293,7 +1294,7 @@
       const cx = S.cut.x, G = Math.max(0, S.gap.x), pp = clamp(S.pp.x, 0, 1.2), px = S.px;
       setFront(S, cx, dt);
       const preview = !!S.previewing;
-      const pvv = steps ? nearest(px) : Math.round(c01(px, PA, PB) * 100), hv = preview ? pvv : S.v;
+      const pvv = steps ? nearest(px) : Math.round(c01(px, PA, PB) * MAX), hv = preview ? pvv : S.v;
       S.tipY = mix(Y - H / 2 - 9, Y - H / 2 + 3, preview ? clamp(pp, 0, 1) : 0);
       const bumpA = drawTip(S, S.text(hv), S.width(hv), preview ? px : cx, hv, now);
       const cuts = [{ x: cx, G }, ...S.heal.map(h => ({ x: h.x, G: h.g.x }))].filter(c => c.G > .3).sort((m, n) => m.x - n.x);
@@ -1332,13 +1333,13 @@
       S.mark.setAttribute('d', m > .05 ? `M${f(cx - mw)} ${f(my - mh)}L${f(cx + mw)} ${f(my - mh)}L${f(cx)} ${f(my + mh)}Z` : '');
       if (S.words) S.words.forEach((w, i) => w.classList.toggle('on', i === S.v));
     };
-    S.aria = () => { const g = S.el.g; g.setAttribute('aria-valuemin', 0); g.setAttribute('aria-valuemax', steps ? steps.length - 1 : 100); g.setAttribute('aria-valuenow', S.v); if (steps) g.setAttribute('aria-valuetext', steps[S.v]); };
+    S.aria = () => { const g = S.el.g; g.setAttribute('aria-valuemin', 0); g.setAttribute('aria-valuemax', steps ? steps.length - 1 : MAX); g.setAttribute('aria-valuenow', S.v); if (steps) g.setAttribute('aria-valuetext', steps[S.v]); };
     S.measure = () => { const t = S.el.tip.text; t.textContent = '0'; const d = t.getComputedTextLength(); if (d > 0) S.el.tip.dw = d + .6; if (steps) measureWords(S, steps); };
     return S;
   }
 
-  const pc = makeParting(90, '01  CONTINUOUS', 'Depth, continuous', { start: 58 });
-  const ps = makeParting(90, '02  STEPPED', 'Depth, stepped', { start: 2, words: ['Still', 'Drift', 'Flow', 'Tide', 'Surge'] });
+  const pc = makeParting(90, '01  CONTINUOUS', 'Sleep timer, continuous, minutes', { start: 25, max: 60 });
+  const ps = makeParting(90, '02  STEPPED', 'Fade out, stepped', { start: 2, words: ['Off', '15s', '30s', '1m', '2m'] });
   const ALL = [ONLY === 'pc' ? pc : ps]; (ONLY === 'pc' ? [ps.el.g, ...ps.words, ps.hair] : [pc.el.g, pc.hair]).forEach(e => e.style.display = 'none');
   function sync() { ALL.forEach(S => S.aria && S.aria()); }
   function measure() { ALL.forEach(S => S.measure()); }
@@ -1596,7 +1597,7 @@
   const PA = X0 + 40, PB = X1 - 40;
   function makeParting(Y, label, aria, opt) {
     const steps = opt.words || null, xs = steps ? steps.map((_, i) => mix(PA, PB, i / (steps.length - 1))) : null;
-    const pos = v => steps ? xs[v] : mix(PA, PB, v / 100);
+    const MAX = opt.max || 100, pos = v => steps ? xs[v] : mix(PA, PB, v / MAX);
     const nearest = x => xs.reduce((b, v, i) => Math.abs(v - x) < Math.abs(xs[b] - x) ? i : b, 0);
     const v0 = opt.start, x0 = pos(v0);
     const S = base(Y, label, aria, {
@@ -1628,8 +1629,8 @@
       S.nudge = k => { go(clamp(S.v + Math.sign(k) * (Math.abs(k) > 99 ? 99 : Math.abs(k) > 1 ? 2 : 1), 0, steps.length - 1)); S.keyT = CLOCK(); };
     } else {
       S.press = x => { if (Math.abs(x - S.cut.x) >= 22) S.jump(clamp(x, PA, PB)); };
-      S.move = x => { S.v = Math.round(c01(x, PA, PB) * 100); sync(); };
-      S.nudge = k => { S.v = clamp(S.v + (Math.abs(k) > 99 ? Math.sign(k) * 100 : Math.abs(k) > 1 ? k / 3 * 10 : k), 0, 100); S.keyT = CLOCK(); sync(); };
+      S.move = x => { S.v = Math.round(c01(x, PA, PB) * MAX); sync(); };
+      S.nudge = k => { S.v = clamp(S.v + (Math.abs(k) > 99 ? Math.sign(k) * MAX : Math.abs(k) > 1 ? k / 3 * 5 : k), 0, MAX); S.keyT = CLOCK(); sync(); };
     }
     S.release = () => S.ripples.push({ x: pos(S.v), t0: CLOCK(), a: 2.2 });
     S.text = v => steps ? steps[v] : String(v);
@@ -1660,7 +1661,7 @@
       const cx = S.cut.x, G = Math.max(0, S.gap.x), pp = clamp(S.pp.x, 0, 1.2), px = S.px;
       setFront(S, cx, dt);
       const preview = !!S.previewing;
-      const pvv = steps ? nearest(px) : Math.round(c01(px, PA, PB) * 100), hv = preview ? pvv : S.v;
+      const pvv = steps ? nearest(px) : Math.round(c01(px, PA, PB) * MAX), hv = preview ? pvv : S.v;
       S.tipY = mix(Y - H / 2 - 9, Y - H / 2 + 3, preview ? clamp(pp, 0, 1) : 0);
       const bumpA = drawTip(S, S.text(hv), S.width(hv), preview ? px : cx, hv, now);
       const cuts = [{ x: cx, G }, ...S.heal.map(h => ({ x: h.x, G: h.g.x }))].filter(c => c.G > .3).sort((m, n) => m.x - n.x);
@@ -1699,13 +1700,13 @@
       S.mark.setAttribute('d', m > .05 ? `M${f(cx - mw)} ${f(my - mh)}L${f(cx + mw)} ${f(my - mh)}L${f(cx)} ${f(my + mh)}Z` : '');
       if (S.words) S.words.forEach((w, i) => w.classList.toggle('on', i === S.v));
     };
-    S.aria = () => { const g = S.el.g; g.setAttribute('aria-valuemin', 0); g.setAttribute('aria-valuemax', steps ? steps.length - 1 : 100); g.setAttribute('aria-valuenow', S.v); if (steps) g.setAttribute('aria-valuetext', steps[S.v]); };
+    S.aria = () => { const g = S.el.g; g.setAttribute('aria-valuemin', 0); g.setAttribute('aria-valuemax', steps ? steps.length - 1 : MAX); g.setAttribute('aria-valuenow', S.v); if (steps) g.setAttribute('aria-valuetext', steps[S.v]); };
     S.measure = () => { const t = S.el.tip.text; t.textContent = '0'; const d = t.getComputedTextLength(); if (d > 0) S.el.tip.dw = d + .6; if (steps) measureWords(S, steps); };
     return S;
   }
 
-  const pc = makeParting(90, '01  CONTINUOUS', 'Depth, continuous', { start: 58 });
-  const ps = makeParting(90, '02  STEPPED', 'Depth, stepped', { start: 2, words: ['Still', 'Drift', 'Flow', 'Tide', 'Surge'] });
+  const pc = makeParting(90, '01  CONTINUOUS', 'Sleep timer, continuous, minutes', { start: 25, max: 60 });
+  const ps = makeParting(90, '02  STEPPED', 'Fade out, stepped', { start: 2, words: ['Off', '15s', '30s', '1m', '2m'] });
   const ALL = [ONLY === 'pc' ? pc : ps]; (ONLY === 'pc' ? [ps.el.g, ...ps.words, ps.hair] : [pc.el.g, pc.hair]).forEach(e => e.style.display = 'none');
   function sync() { ALL.forEach(S => S.aria && S.aria()); }
   function measure() { ALL.forEach(S => S.measure()); }
@@ -1787,11 +1788,13 @@
   [['stage1', 's1'], ['stage2', 's2'], ['stage3', 's3'], ['stage4', 's4']].forEach(([id, key]) => {
     const g = [...document.querySelectorAll(`#${id} .slider`)].find(n => n.style.display !== 'none');
     const out = document.querySelector(`.unit[data-for="${key}"]`), stepped = /stepped/.test(g.getAttribute('aria-label'));
-    const show = () => out.textContent = stepped ? g.getAttribute('aria-valuetext') : g.getAttribute('aria-valuenow') + ' %';
+    const minutes = /minutes/.test(g.getAttribute('aria-label'));
+    const show = () => out.textContent = stepped ? g.getAttribute('aria-valuetext') : g.getAttribute('aria-valuenow') + (minutes ? ' min' : ' %');
     new MutationObserver(show).observe(g, { attributes: true, attributeFilter: ['aria-valuenow', 'aria-valuetext'] }); show();
   });
   go(0);
 })();
 </script>
+
 </body>
 </html>
