@@ -70,7 +70,7 @@ body { margin: 0; background: var(--bg); color: var(--ink); font: 400 15px/1.5 v
 .sl .ghost { fill: var(--solid); }
 
 .ball { position: absolute; left: 0; top: 0; width: 20px; height: 20px; margin: -10px 0 0 -10px; border-radius: 50%; background: var(--solid); outline: none; will-change: transform; z-index: 2;
-  box-shadow: 0 0 0 3px var(--panel), var(--sh, 0 1px 3px rgba(var(--ball-shadow), 0.22)); }
+  box-shadow: 0 0 0 3px var(--panel), var(--sh, 0 1px 2px -1px rgba(var(--ball-shadow), 0.25)); }
 .ball:focus-visible { box-shadow: 0 0 0 3px var(--panel), 0 0 0 5px var(--ink), var(--sh, 0 1px 3px rgba(var(--ball-shadow), 0.22)); }
 
 /* Volume: the number rides on the rope. Docked, the bubble sits over the knob; hovered, it lifts off and the knob shows. */
@@ -91,7 +91,7 @@ body { margin: 0; background: var(--bg); color: var(--ink); font: 400 15px/1.5 v
 #s-freq.sl.stepped { height: 68px; }
 #s-freq .stops { top: 50px; }
 #s-freq .stopdot:first-of-type, #s-freq .stopdot:last-of-type { display: none; }
-#s-vol .ball, #s-freq .ball { width: 12px; height: 12px; margin: -6px 0 0 -6px; box-shadow: 0 0 0 2px var(--panel), var(--sh, 0 1px 3px rgba(var(--ball-shadow), 0.22)); }
+#s-vol .ball, #s-freq .ball { width: 12px; height: 12px; margin: -6px 0 0 -6px; box-shadow: 0 0 0 2px var(--panel), var(--sh, 0 1px 2px -1px rgba(var(--ball-shadow), 0.25)); }
 #s-vol .ball:focus-visible { box-shadow: 0 0 0 2px var(--panel), 0 0 0 4px var(--ink); }
 .numb { position: absolute; left: 0; top: 0; z-index: 3; height: 24px; min-width: 32px; padding: 4px 8px; border-radius: 12px; background: var(--tip-bg); color: var(--tip-ink); font: 500 12px/16px var(--sans); text-align: center; font-variant-numeric: tabular-nums; white-space: nowrap; pointer-events: none; transform-origin: 0 0; will-change: transform; box-shadow: 0 0 0 2px var(--panel); }
 
@@ -166,8 +166,8 @@ body { margin: 0; background: var(--bg); color: var(--ink); font: 400 15px/1.5 v
 /* Focus rings are for the keyboard only: a mouse or touch press never draws one. */
 html.pointer-mode *:focus, html.pointer-mode *:focus-visible, html.pointer-mode .check:focus-within { outline: none !important; }
 html.pointer-mode .ruler:focus-visible { box-shadow: none; }
-html.pointer-mode .ball:focus-visible { box-shadow: 0 0 0 3px var(--panel), var(--sh, 0 1px 3px rgba(var(--ball-shadow), 0.22)); }
-html.pointer-mode #s-vol .ball:focus-visible { box-shadow: 0 0 0 2px var(--panel), var(--sh, 0 1px 3px rgba(var(--ball-shadow), 0.22)); }
+html.pointer-mode .ball:focus-visible { box-shadow: 0 0 0 3px var(--panel), var(--sh, 0 1px 2px -1px rgba(var(--ball-shadow), 0.25)); }
+html.pointer-mode #s-vol .ball:focus-visible { box-shadow: 0 0 0 2px var(--panel), var(--sh, 0 1px 2px -1px rgba(var(--ball-shadow), 0.25)); }
 
 /* ---------- Style pass: nested soft surfaces, big numbers, quiet labels ---------- */
 :root { --bg: #f1f1f2; --panel: #f6f6f8; --panel-line: rgba(23, 24, 27, 0.04); --rail: #e6e6e9; --fill-a: #1b1c20; --fill-b: #17181b;
@@ -198,9 +198,9 @@ html.pointer-mode #s-vol .ball:focus-visible { box-shadow: 0 0 0 2px var(--panel
 #spec-btn[aria-expanded="true"] { background: var(--ink); color: var(--card); }
 .hint { font-size: 13px; }
 /* One thumb size everywhere: 14 with a 2 white ring; stops 3. */
-.ball, #s-vol .ball, #s-freq .ball { width: 14px; height: 14px; margin: -7px 0 0 -7px; box-shadow: 0 0 0 2px var(--panel), var(--sh, 0 1px 3px rgba(var(--ball-shadow), 0.22)); }
+.ball, #s-vol .ball, #s-freq .ball { width: 14px; height: 14px; margin: -7px 0 0 -7px; box-shadow: 0 0 0 2px var(--panel), var(--sh, 0 1px 2px -1px rgba(var(--ball-shadow), 0.25)); }
 .ball:focus-visible, #s-vol .ball:focus-visible { box-shadow: 0 0 0 2px var(--panel), 0 0 0 4px var(--ink); }
-html.pointer-mode .ball:focus-visible, html.pointer-mode #s-vol .ball:focus-visible { box-shadow: 0 0 0 2px var(--panel), var(--sh, 0 1px 3px rgba(var(--ball-shadow), 0.22)); }
+html.pointer-mode .ball:focus-visible, html.pointer-mode #s-vol .ball:focus-visible { box-shadow: 0 0 0 2px var(--panel), var(--sh, 0 1px 2px -1px rgba(var(--ball-shadow), 0.25)); }
 .stops > span { font-kerning: none; font-feature-settings: "kern" 0; }
 .stage { position: relative; flex: 1; display: block; padding: 0; overflow: hidden; touch-action: pan-y; }
 .track { position: absolute; inset: 0; display: flex; will-change: transform; transition: transform 460ms cubic-bezier(.2, .8, .2, 1); }
@@ -293,7 +293,7 @@ html.pointer-mode .ball:focus-visible, html.pointer-mode #s-vol .ball:focus-visi
       <div class="spec-group"><h3>Thumb (ball)</h3><dl>
         <dt>Size</dt><dd>14, ring 2 #F6F6F8 = the panel, so it reads as a cut-out (every slider, the rope knobs too)</dd>
         <dt>Fill</dt><dd><i style="background:#1b1c20"></i>#1B1C20</dd>
-        <dt>Rest</dt><dd>shadow 0 1 3 · 22%</dd>
+        <dt>Rest</dt><dd>shadow 0 1 2 −1 · 25% (tucked inside the ring)</dd>
         <dt>Hover</dt><dd>lifts 1, shadow 0 3 8 · 24%</dd>
         <dt>Pressed</dt><dd>sinks 1.5 into track, shadow 0 0 2 · 30%, one-sided press shake</dd>
         <dt>Drag</dt><dd>lifts 3, shadow 0 6 14 · 26%, follows 1:1</dd>
@@ -898,8 +898,9 @@ html.pointer-mode .ball:focus-visible, html.pointer-mode #s-vol .ball:focus-visi
     s.ball.style.transform = `translate(${bxp.toFixed(2)}px, ${by.toFixed(2)}px)`;
     const up = -s.lift.x;
     let sh;
-    if (s.lift.x > 0.3) sh = '0 0 2px rgba(var(--ball-shadow), 0.3)';
-    else sh = `0 ${(1 + up * 1.7).toFixed(1)}px ${(3 + up * 3.7).toFixed(1)}px rgba(var(--ball-shadow), ${(0.22 + up * 0.013).toFixed(3)})`;
+    // The shadow is pulled in (negative spread) so it never shows outside the ring: the ring reads as the panel, not as a stroke.
+    if (s.lift.x > 0.3) sh = '0 0 0 0 transparent';
+    else { const u = Math.max(0, up); sh = `0 ${(1 + u * 1.5).toFixed(1)}px ${(2 + u * 2.5).toFixed(1)}px ${(-1 - u * 0.8).toFixed(1)}px rgba(var(--ball-shadow), ${(0.25 + u * 0.02).toFixed(3)})`; }
     s.ball.style.setProperty('--sh', sh);
 
     // Tooltip
