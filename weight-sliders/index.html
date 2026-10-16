@@ -326,7 +326,7 @@ html.pointer-mode .ball:focus-visible, html.pointer-mode #s-vol .ball:focus-visi
         <dt>Lever spring</dt><dd>k 60, c 7 (slow, one overshoot)</dd>
         <dt>Card</dt><dd>follows the lever at 30%</dd>
         <dt>Full</dt><dd>hold 500 ms at the gate; tap teases</dd>
-        <dt>Hover · test press</dt><dd>pointer on the track (not the ball): the lever (rigid, no dent) leans up to +1.1° as if pressed there; the head shows "→ value" there</dd>
+        <dt>Hover · test press</dt><dd>pointer on the track (not the ball): the lever (rigid, no dent) leans up to +1.1° as if pressed there</dd>
         <dt>Drag · carry</dt><dd>the ball is lifted 12 off the lever, its shadow left on the track; the lever carries 35% of its weight; release drops it and the lever takes it all with a knock</dd>
         <dt>Drag · slope</dt><dd>continuous only: set down, it rolls 12 + 28 × value px further out (≈ 4–15 km), friction 300 px/s²</dd>
         <dt>Letters</dt><dd>loose, as in Week 3: the labels' letters slide downhill with the card's tilt (20 px per degree, 0.12° friction, each letter its own grip 0.04–0.26° and weight ×0.7–1.3), pile against a wall at the end of the longest label, knock (40%), tumble ≤ 2.5°, follow the card 0.25 s late, drift home when it levels</dd>
@@ -929,7 +929,7 @@ html.pointer-mode .ball:focus-visible, html.pointer-mode #s-vol .ball:focus-visi
       s.shadowEl.setAttribute('cx', bxp.toFixed(2)); s.shadowEl.setAttribute('cy', (trackY(s, bxp) + 1).toFixed(2));
       s.shadowEl.setAttribute('rx', (7 - 2 * up).toFixed(2)); s.shadowEl.setAttribute('ry', (2.4 - 0.6 * up).toFixed(2));
       s.shadowEl.style.opacity = (up > 0.08 ? 0.12 + 0.18 * up : 0).toFixed(3);
-      const show = s.probeOn && s.dimple.x > 0.3;
+      const show = false;   // no preview number: the lever's lean is the preview
       let g = '';
       if (show) { const u = clamp((s.px - X0) / (X1 - X0), 0, 1); g = s.stepped ? s.d.stops[nearest(s.px, s)] : s.d.text(u); }
       if (s.ghost.textContent !== g) s.ghost.textContent = g;
