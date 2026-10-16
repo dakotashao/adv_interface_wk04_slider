@@ -1,0 +1,1110 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Weight Sliders</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@300..700&family=Geist+Mono:wght@400;500&display=swap">
+<style>
+/* Week 4: three sets of sliders (continuous + stepped) in the Week 3 list cards. Each set takes its weight from a
+   different source: the value itself, an amount piling up, or a position on a lever. */
+:root {
+  --bg: #f6f6f6;
+  --card: #ffffff;
+  --card-shadow: 0 22px 44px -14px rgba(26, 28, 36, 0.18), 0 3px 8px rgba(26, 28, 36, 0.05), inset 0 0 0 1px rgba(255, 255, 255, 0.9);
+  --ink: #17181b;
+  --muted: #62666d;
+  --line: #dfe0e4;
+  --press: #eeeef1;
+  --rail: #eeeef1;
+  --stop: #b9bcc2;
+  --solid: #1b1c20;
+  --tip-bg: #1b1c20;
+  --tip-ink: #f4f4f6;
+  --ball-shadow: 26, 28, 36;
+  --sans: "Geist", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --mono: "Geist Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0f1012; --card: #202226; --ink: #eeeff1; --muted: #9a9ea5; --line: #2a2c31; --press: #2c2f34;
+    --card-shadow: 0 22px 44px -14px rgba(0, 0, 0, 0.7), 0 3px 8px rgba(0, 0, 0, 0.3), inset 0 0 0 1px rgba(255, 255, 255, 0.07);
+    --rail: #2f3237; --stop: #5a5e66; --solid: #eeeff1; --tip-bg: #eeeff1; --tip-ink: #17181b; --ball-shadow: 0, 0, 0;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0f1012; --card: #202226; --ink: #eeeff1; --muted: #9a9ea5; --line: #2a2c31; --press: #2c2f34;
+  --card-shadow: 0 22px 44px -14px rgba(0, 0, 0, 0.7), 0 3px 8px rgba(0, 0, 0, 0.3), inset 0 0 0 1px rgba(255, 255, 255, 0.07);
+  --rail: #2f3237; --stop: #5a5e66; --solid: #eeeff1; --tip-bg: #eeeff1; --tip-ink: #17181b; --ball-shadow: 0, 0, 0;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 400 15px/1.5 var(--sans); -webkit-font-smoothing: antialiased; }
+.page { min-height: 100%; display: flex; flex-direction: column; }
+.stage { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 64px 16px 40px; gap: 32px; }
+.lists { display: flex; flex-wrap: wrap; justify-content: center; align-items: flex-start; gap: 48px 24px; }
+@media (min-width: 1700px) { .lists { zoom: 1.2; } }
+.demo { display: flex; flex-direction: column; gap: 8px; }
+.group-label { margin: 0; padding-left: 16px; font: 500 11px/16px var(--mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+.group-label .src { margin-left: 8px; color: var(--ink); letter-spacing: 0.04em; }
+
+.list { position: relative; width: 320px; max-width: calc(100vw - 32px); padding: 8px; border-radius: 24px; background: var(--card); box-shadow: var(--card-shadow); transform-origin: 50% 50%; will-change: transform; }
+
+/* Slider row */
+.srow { padding: 14px 16px 12px; border-radius: 16px; }
+.head { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; }
+.label { font: 400 16px/24px var(--sans); letter-spacing: -0.005em; color: var(--ink); }
+.val { font: 400 12px/16px var(--mono); color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+/* Track zone: 272 wide, 40 tall, ball centre 20 from the top. Stepped rows add a 20 label line. */
+.sl { position: relative; width: 272px; max-width: 100%; height: 40px; margin-top: 4px; touch-action: pan-y; cursor: pointer; transform-origin: 136px 20px; user-select: none; -webkit-user-select: none; -webkit-tap-highlight-color: transparent; }
+.sl.stepped { height: 62px; }
+.sl::before { content: ""; position: absolute; inset: -4px -8px 0; }
+.sl svg { position: absolute; left: 0; top: 0; overflow: visible; pointer-events: none; }
+.sl .rail { fill: none; stroke: var(--rail); stroke-width: 8; stroke-linecap: round; stroke-linejoin: round; }
+.sl .fill { fill: none; stroke: var(--solid); stroke-width: 8; stroke-linecap: round; stroke-linejoin: round; }
+.sl .stopdot { fill: var(--stop); }
+.sl .stopdot.under { fill: var(--panel); opacity: 0.7; }
+.sl .bead { fill: var(--solid); }
+.sl .ghost { fill: var(--solid); }
+
+.ball { position: absolute; left: 0; top: 0; width: 20px; height: 20px; margin: -10px 0 0 -10px; border-radius: 50%; background: var(--solid); outline: none; will-change: transform; z-index: 2;
+  box-shadow: 0 0 0 3px var(--panel), var(--sh, 0 1px 3px rgba(var(--ball-shadow), 0.22)); }
+.ball:focus-visible { box-shadow: 0 0 0 3px var(--panel), 0 0 0 5px var(--ink), var(--sh, 0 1px 3px rgba(var(--ball-shadow), 0.22)); }
+
+/* Volume: the number rides on the rope. Docked, the bubble sits over the knob; hovered, it lifts off and the knob shows. */
+#s-vol { margin-bottom: 12px; }
+.head .ch { display: inline-block; will-change: transform; }
+.head .sp { display: inline-block; width: 0.28em; }
+.head { font-kerning: none; font-feature-settings: "kern" 0; }
+.sl .lift-shadow { fill: rgb(var(--ball-shadow)); opacity: 0; }
+.head { position: relative; }
+.ghostval { position: absolute; right: 0; top: 0; font: 400 14px/20px var(--sans); color: var(--muted); font-variant-numeric: tabular-nums; opacity: 0; transform: translateY(4px); transition: opacity 140ms ease, transform 140ms ease; pointer-events: none; }
+.ghostval.on { opacity: 1; transform: none; }
+.ghostval::before { content: "→ "; }
+.srow.probing .val { opacity: 0; }
+.val { transition: opacity 140ms ease; }
+#s-prec .ghostval, .srow:has(#s-prec) .ghostval { }
+.srow { will-change: transform; }
+#s-freq .stops > span:not(:first-child):not(:last-child) { visibility: hidden; }
+#s-freq.sl.stepped { height: 68px; }
+#s-freq .stops { top: 50px; }
+#s-freq .stopdot:first-of-type, #s-freq .stopdot:last-of-type { display: none; }
+#s-vol .ball, #s-freq .ball { width: 12px; height: 12px; margin: -6px 0 0 -6px; box-shadow: 0 0 0 2px var(--panel), var(--sh, 0 1px 3px rgba(var(--ball-shadow), 0.22)); }
+#s-vol .ball:focus-visible { box-shadow: 0 0 0 2px var(--panel), 0 0 0 4px var(--ink); }
+.numb { position: absolute; left: 0; top: 0; z-index: 3; height: 24px; min-width: 32px; padding: 4px 8px; border-radius: 12px; background: var(--tip-bg); color: var(--tip-ink); font: 500 12px/16px var(--sans); text-align: center; font-variant-numeric: tabular-nums; white-space: nowrap; pointer-events: none; transform-origin: 0 0; will-change: transform; box-shadow: 0 0 0 2px var(--panel); }
+
+/* Value tooltip: the Week 2 plain tooltip, standing on the ball. 24 high, pointer 12 × 6. */
+.tip { position: absolute; left: 0; top: 0; z-index: 3; pointer-events: none; opacity: 0; transition: opacity 140ms ease; will-change: transform, opacity; transform-origin: 50% 100%; }
+.tip.show { opacity: 1; }
+.tip span { display: block; height: 24px; padding: 4px 8px; border-radius: 8px; background: var(--tip-bg); color: var(--tip-ink); font: 500 12px/16px var(--sans); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.tip::after { content: ""; position: absolute; left: 50%; bottom: -6px; margin-left: -6px; border: 6px solid transparent; border-bottom: 0; border-top-color: var(--tip-bg); }
+
+/* Count pill (Set 2 stepped): the Week 2 badge shape in the system's solid, sitting on the ball. */
+.pill { position: absolute; left: 0; top: 0; z-index: 3; min-width: 16px; height: 16px; padding: 0 4px; border-radius: 8px; background: var(--solid); color: var(--card); box-shadow: 0 0 0 2px var(--panel); font: 500 11px/16px var(--sans); text-align: center; font-variant-numeric: tabular-nums; pointer-events: none; will-change: transform, opacity; }
+
+.stops { position: absolute; left: 0; right: 0; top: 42px; height: 16px; pointer-events: none; }
+.stops > span { position: absolute; top: 0; font: 400 12px/16px var(--sans); color: var(--muted); white-space: nowrap; transition: color 120ms ease; }
+.stops > span.on { color: var(--ink); font-weight: 500; }
+.stops .ch { display: inline-block; will-change: transform; }
+
+/* Ruler slider (exploration), measured off the reference at 272 wide:
+   pill 46 high, no border; value 16 from the left; tape window 160 centred; 1 centre line, full height;
+   ticks 6.65 apart (one per day), centred; counted ones 14 and dark, the rest 7 and light.
+   Quirky: the centre line hangs from the top like a pendulum, with the system's ball (10) as its bob. */
+.ruler { position: relative; width: 272px; max-width: 100%; height: 46px; margin-top: 8px; border-radius: 23px; background: var(--rail); touch-action: pan-y; cursor: grab; user-select: none; -webkit-user-select: none; outline: none; transition: background-color 140ms ease; }
+.ruler:hover { background: #e8e8ec; }
+.ruler.is-press { background: #e3e3e7; }
+.ruler.is-drag { cursor: grabbing; }
+.ruler:focus-visible { box-shadow: 0 0 0 2px var(--panel), 0 0 0 4px var(--ink); }
+.ruler-val { position: absolute; left: 18px; top: 13px; font: 400 16px/20px var(--sans); font-variant-numeric: tabular-nums; color: var(--ink); }
+.ruler-window { position: absolute; left: 56px; width: 160px; top: 0; height: 46px; overflow: hidden;
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 14%, #000 86%, transparent); mask-image: linear-gradient(90deg, transparent, #000 14%, #000 86%, transparent); }
+.ruler-window svg { position: absolute; left: 0; top: 0; overflow: visible; }
+.ruler .tk { stroke: var(--stop); stroke-width: 1; stroke-linecap: round; }
+.ruler .tk.on { stroke: var(--muted); stroke-width: 1.25; }
+.ruler-rod { position: absolute; left: 136px; top: 0; width: 1px; height: 46px; margin-left: -0.5px; background: var(--ink); transform-origin: 50% 0; pointer-events: none; will-change: transform; }
+.ruler-ball { position: absolute; left: 50%; top: 23px; width: 10px; height: 10px; margin: -5px 0 0 -5px; border-radius: 50%; background: var(--solid); box-shadow: 0 0 0 2px var(--rail), var(--rsh, 0 1px 2px rgba(var(--ball-shadow), 0.25)); will-change: transform; transition: box-shadow 140ms ease; }
+.ruler:hover .ruler-ball { box-shadow: 0 0 0 2px #e8e8ec, var(--rsh); }
+.ruler.is-press .ruler-ball, .ruler.is-drag .ruler-ball { box-shadow: 0 0 0 2px #e3e3e7, var(--rsh); }
+.ruler-val .d { display: inline-block; will-change: transform; }
+.ruler-reset { position: absolute; right: 8px; top: 7px; display: grid; place-items: center; width: 32px; height: 32px; padding: 0; border: 0; border-radius: 16px; background: none; color: var(--ink); cursor: pointer; transition: background-color 140ms ease; }
+.ruler-reset:hover { background: rgba(23, 24, 27, 0.06); }
+.ruler-reset:focus-visible { outline: 2px solid var(--ink); outline-offset: 1px; }
+.ruler-reset svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+.hint { margin: 0; min-height: 18px; max-width: 380px; text-align: center; color: var(--muted); font-size: 13px; line-height: 18px; transition: color 160ms ease; }
+.hint.is-nudge { color: var(--ink); }
+
+/* Demo controls (Week 2/3) */
+.controls { position: relative; z-index: 3; display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 10px 8px; padding: 0 16px 28px; }
+.btn { appearance: none; height: 42px; padding: 0 16px; border: 0; border-radius: 999px; background: var(--card); box-shadow: inset 0 0 0 1px var(--line); color: var(--ink); font: 400 14px/1 var(--sans); cursor: pointer; transition: background-color 140ms ease, color 140ms ease; }
+.btn:hover { background: var(--press); }
+.check { display: inline-flex; align-items: center; gap: 8px; }
+.check input { width: 16px; height: 16px; margin: 0; accent-color: var(--ink); }
+:where(.btn, .spec-close):focus-visible, .check:focus-within { outline: 2px solid var(--ink); outline-offset: 3px; }
+.check input:focus-visible { outline: none; }
+#spec-btn[aria-expanded="true"] { background: var(--ink); color: var(--bg); box-shadow: none; }
+
+/* Spec sheet */
+.spec { position: fixed; left: 50%; bottom: 0; transform: translateX(-50%); z-index: 5; width: min(1040px, 100%); max-height: 64vh; overflow-y: auto; padding: 20px 24px calc(24px + env(safe-area-inset-bottom, 0px)); border-radius: 20px 20px 0 0; background: var(--card); box-shadow: 0 -12px 40px -12px rgba(26, 28, 36, 0.2), 0 0 0 1px var(--line); }
+.spec[hidden] { display: none; }
+.spec-head { display: flex; align-items: baseline; gap: 12px; margin-bottom: 8px; }
+.spec-head h2 { margin: 0; font-size: 16px; line-height: 24px; font-weight: 600; }
+.spec-head span { color: var(--muted); font: 12px/16px var(--mono); }
+.spec-rule { margin: 0 0 16px; max-width: 72ch; color: var(--muted); font-size: 13px; line-height: 18px; }
+.spec-close { margin-left: auto; appearance: none; border: 0; background: var(--press); color: var(--ink); font: 500 13px/20px var(--sans); padding: 6px 14px; border-radius: 999px; cursor: pointer; }
+.spec-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 20px 32px; }
+.spec-group h3 { margin: 0 0 8px; font: 500 11px/16px var(--mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+.spec-group dl { margin: 0; display: grid; grid-template-columns: auto 1fr; gap: 0 16px; }
+.spec-group dt, .spec-group dd { margin: 0; padding: 6px 0; border-bottom: 1px solid var(--line); font-size: 13px; line-height: 18px; }
+.spec-group dt { color: var(--muted); }
+.spec-group dd { font-family: var(--mono); font-size: 12px; display: flex; align-items: center; gap: 6px; font-variant-numeric: tabular-nums; }
+.spec-group dd i { width: 12px; height: 12px; border-radius: 3px; flex: none; box-shadow: inset 0 0 0 1px var(--line); }
+
+/* Focus rings are for the keyboard only: a mouse or touch press never draws one. */
+html.pointer-mode *:focus, html.pointer-mode *:focus-visible, html.pointer-mode .check:focus-within { outline: none !important; }
+html.pointer-mode .ruler:focus-visible { box-shadow: none; }
+html.pointer-mode .ball:focus-visible { box-shadow: 0 0 0 3px var(--panel), var(--sh, 0 1px 3px rgba(var(--ball-shadow), 0.22)); }
+html.pointer-mode #s-vol .ball:focus-visible { box-shadow: 0 0 0 2px var(--panel), var(--sh, 0 1px 3px rgba(var(--ball-shadow), 0.22)); }
+
+/* ---------- Style pass: nested soft surfaces, big numbers, quiet labels ---------- */
+:root { --bg: #f1f1f2; --panel: #f6f6f8; --panel-line: rgba(23, 24, 27, 0.04); --rail: #e6e6e9; --fill-a: #1b1c20; --fill-b: #17181b;
+  --card-shadow: 0 1px 2px rgba(26, 28, 36, 0.04), 0 28px 56px -28px rgba(26, 28, 36, 0.22), 0 0 0 1px rgba(23, 24, 27, 0.03); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --panel: #18191c; --panel-line: rgba(255, 255, 255, 0.05); --rail: #2c2e33; --fill-a: #eeeff1; --fill-b: #eeeff1; } }
+:root[data-theme="dark"] { --panel: #18191c; --panel-line: rgba(255, 255, 255, 0.05); --rail: #2c2e33; --fill-a: #eeeff1; --fill-b: #eeeff1; }
+.lists { gap: 32px 24px; }
+.list { width: 292px; padding: 8px; border-radius: 28px; }
+.ctitle { padding: 10px 14px 10px; font: 600 15px/20px var(--sans); letter-spacing: -0.01em; color: var(--ink); }
+.srow { background: var(--panel); border-radius: 20px; padding: 12px 14px 12px; box-shadow: inset 0 0 0 1px var(--panel-line); }
+.srow + .srow { margin-top: 8px; }
+.head { flex-direction: row; align-items: baseline; justify-content: space-between; gap: 12px; }
+.label { font: 400 15px/20px var(--sans); letter-spacing: -0.005em; color: var(--ink); }
+.val { font: 400 14px/20px var(--sans); letter-spacing: 0; color: var(--muted); font-variant-numeric: tabular-nums; }
+.val b { font-weight: 400; }
+.val span { margin-left: 2px; }
+#v-aud, #v-prec { display: none; }
+
+.sl { width: 248px; margin-top: 6px; transform-origin: 124px 20px; }
+.sl .rail, .sl .fill { stroke-width: 6; }
+.tip { display: none; }
+.stops > span { color: #9a9da3; }
+.stops > span.on { color: var(--ink); }
+.controls { padding: 0 16px 28px; }
+.dock { display: inline-flex; gap: 4px; padding: 5px; border-radius: 999px; background: var(--card); box-shadow: var(--card-shadow); }
+.btn { height: 38px; padding: 0 16px; background: var(--panel); box-shadow: none; font: 500 13px/1 var(--sans); }
+.btn:hover { background: var(--press); }
+#spec-btn[aria-expanded="true"] { background: var(--ink); color: var(--card); }
+.hint { font-size: 13px; }
+/* One thumb size everywhere: 14 with a 2 white ring; stops 3. */
+.ball, #s-vol .ball, #s-freq .ball { width: 14px; height: 14px; margin: -7px 0 0 -7px; box-shadow: 0 0 0 2px var(--panel), var(--sh, 0 1px 3px rgba(var(--ball-shadow), 0.22)); }
+.ball:focus-visible, #s-vol .ball:focus-visible { box-shadow: 0 0 0 2px var(--panel), 0 0 0 4px var(--ink); }
+html.pointer-mode .ball:focus-visible, html.pointer-mode #s-vol .ball:focus-visible { box-shadow: 0 0 0 2px var(--panel), var(--sh, 0 1px 3px rgba(var(--ball-shadow), 0.22)); }
+.stops > span { font-kerning: none; font-feature-settings: "kern" 0; }
+.stage { position: relative; flex: 1; display: block; padding: 0; overflow: hidden; touch-action: pan-y; }
+.track { position: absolute; inset: 0; display: flex; will-change: transform; transition: transform 460ms cubic-bezier(.2, .8, .2, 1); }
+.track.dragging { transition: none; }
+.slide { flex: 0 0 100%; display: flex; align-items: center; justify-content: center; padding: 48px 16px; }
+.hint { position: absolute; left: 0; right: 0; bottom: 8px; margin: 0 auto; }
+.nav { position: absolute; top: 50%; z-index: 2; width: 44px; height: 44px; margin-top: -22px; display: grid; place-items: center; border: 0; border-radius: 22px; background: none; color: var(--muted); cursor: pointer; opacity: 0; transition: opacity 160ms ease, background-color 140ms ease, color 140ms ease; }
+.stage:hover .nav:not([disabled]), .nav:focus-visible { opacity: 1; }
+.nav:hover { background: var(--press); color: var(--ink); }
+.nav[disabled] { opacity: 0 !important; pointer-events: none; }
+.nav:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+.nav svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: round; stroke-linejoin: round; }
+.nav.prev { left: max(16px, calc(50% - 250px)); } .nav.next { right: max(16px, calc(50% - 250px)); }
+@media (max-width: 560px) { .nav { display: none; } }
+</style>
+
+<main class="page">
+  <div class="stage" id="stage" aria-roledescription="carousel">
+    <button class="nav prev" type="button" id="prev" aria-label="Previous"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg></button>
+    <div class="track" id="track">
+      <div class="slide" aria-roledescription="slide" aria-label="1 of 2">
+      <div class="demo">
+        <div class="list" id="card1" role="group" aria-labelledby="g1">
+          <div class="ctitle" id="g1">Storage</div>
+          <div class="srow">
+            <div class="head"><span class="label" id="n-vol">Offline downloads</span><span class="val" id="v-vol"></span></div>
+            <div class="sl" id="s-vol"></div>
+          </div>
+          <div class="srow">
+            <div class="head"><span class="label" id="n-freq">Keep for</span><span class="val" id="v-freq"></span></div>
+            <div class="sl stepped" id="s-freq"></div>
+          </div>
+        </div>
+      </div>
+      </div>
+      <div class="slide" aria-roledescription="slide" aria-label="2 of 2">
+      <div class="demo">
+        <div class="list" id="card3" role="group" aria-labelledby="g3">
+          <div class="ctitle" id="g3">Privacy</div>
+          <div class="srow">
+            <div class="head"><span class="label" id="n-range">Visible within</span><span class="val" id="v-range"></span></div>
+            <div class="sl" id="s-range"></div>
+          </div>
+          <div class="srow">
+            <div class="head"><span class="label" id="n-prec">Usage data</span><span class="val" id="v-prec"></span></div>
+            <div class="sl stepped" id="s-prec"></div>
+          </div>
+        </div>
+      </div>
+      </div>
+    </div>
+    <button class="nav next" type="button" id="next" aria-label="Next"><svg viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg></button>
+    <p class="hint" id="hint" aria-live="polite"></p>
+  </div>
+
+  <div class="controls"><div class="dock">
+    <button class="btn" type="button" id="reset">Reset</button>
+    <label class="btn check" for="slow"><input type="checkbox" id="slow"> Slow motion</label>
+    <button class="btn" type="button" id="spec-btn" aria-expanded="false" aria-controls="spec">Spec</button>
+  </div></div>
+
+  <section class="spec" id="spec" aria-labelledby="spec-title" hidden>
+    <div class="spec-head">
+      <h2 id="spec-title">Spec</h2>
+      <span>px at 1×</span>
+      <button class="spec-close" type="button" id="spec-close" aria-label="Close spec">Close</button>
+    </div>
+    <p class="spec-rule">Rule: a value weighs as much as what it exposes. The ball always follows the hand 1:1; weight only shows in how the track, the label and the card react. Set 1 (Storage): the number hangs on a rope and gets heavier as the value rises; the rope droops deepest under it. Set 2: the track is a lever pivoted at its 0 end; at 0 it is level, and the further out the ball goes the more it tips it. Going to the most exposed stop (Full) takes a hold; coming back is light.</p>
+    <div class="spec-grid">
+      <div class="spec-group"><h3>Card + row</h3><dl>
+        <dt>Card</dt><dd>292, padding 8, radius 28, #FFFFFF</dd>
+        <dt>Card shadow</dt><dd>0 1 2 · 4%, 0 28 56 −28 · 22%</dd>
+        <dt>Title</dt><dd>Geist Semibold 15 / 20, −0.01em, padding 10 14 (left edge lines up with the row labels, 22 in)</dd>
+        <dt>Row panel</dt><dd><i style="background:#f6f6f8"></i>#F6F6F8, radius 20 (card 28 − 8), padding 12 14, 1 inner line 4%</dd>
+        <dt>Row gap</dt><dd>8 (same as the card padding)</dd>
+        <dt>Label</dt><dd>Geist Regular 15 / 20, −0.005em, #17181B, left</dd>
+        <dt>Value</dt><dd>Geist Regular 14 / 20, tabular, #62666D, right on the label's baseline (stepped rows: the stop labels show it)</dd>
+        <dt>Unit</dt><dd>same style, 2 after the number</dd>
+        <dt>Head to track</dt><dd>6</dd>
+      </dl></div>
+      <div class="spec-group"><h3>Track</h3><dl>
+        <dt>Length</dt><dd>248 (ball travel 226)</dd>
+        <dt>Height</dt><dd>6, round caps</dd>
+        <dt>Rail</dt><dd><i style="background:#e6e6e9"></i>#E6E6E9</dd>
+        <dt>Active fill</dt><dd><i style="background:#1b1c20"></i>#1B1C20, solid</dd>
+        <dt>Zone</dt><dd>40 tall, hit area 48</dd>
+        <dt>Stop</dt><dd>3 dot, #B9BCC2; white 70% on fill</dd>
+        <dt>Stop label</dt><dd>Geist 12 / 16, #9A9DA3; selected 500 #17181B</dd>
+      </dl></div>
+      <div class="spec-group"><h3>Thumb (ball)</h3><dl>
+        <dt>Size</dt><dd>14, ring 2 #F6F6F8 = the panel, so it reads as a cut-out (every slider, the rope knobs too)</dd>
+        <dt>Fill</dt><dd><i style="background:#1b1c20"></i>#1B1C20</dd>
+        <dt>Rest</dt><dd>shadow 0 1 3 · 22%</dd>
+        <dt>Hover</dt><dd>lifts 1, shadow 0 3 8 · 24%</dd>
+        <dt>Pressed</dt><dd>sinks 1.5 into track, shadow 0 0 2 · 30%, one-sided press shake</dd>
+        <dt>Drag</dt><dd>lifts 3, shadow 0 6 14 · 26%, follows 1:1</dd>
+        <dt>Focus</dt><dd>2 ring #17181B outside the white ring</dd>
+      </dl></div>
+      <div class="spec-group"><h3>Offline downloads: number on the rope</h3><dl>
+        <dt>Rope</dt><dd>stroke 6, round caps, pinned at both ends</dd>
+        <dt>Droop</dt><dd>lowest point always under the number; 1.5 deep at 0 → 12 at 100 (a little less right by a pin)</dd>
+        <dt>Number</dt><dd>24 high, min 32 wide, padding 4 8, radius 12, 2 ring #F6F6F8 (the panel)</dd>
+        <dt>Text</dt><dd>Geist Medium 12 / 16, tabular, #F4F4F6 on #1B1C20</dd>
+        <dt>Rest</dt><dd>docked on the rope over the knob, always showing</dd>
+        <dt>Hover / drag / focus</dt><dd>lifts 26 off the rope; knob 14 shows; rope eases up 1/12</dd>
+        <dt>Tap</dt><dd>the rope throws it to where you tapped (same hop as Keep for): a ball in the air, the number again on landing</dd>
+        <dt>Leave</dt><dd>falls back, rebounds 22%; rope and card take the hit (heavier when higher)</dd>
+        <dt>Swing</dt><dd>lifted, it lags the drag, ≤ 12°</dd>
+        <dt>Card</dt><dd>dips 0 → 1.4; tilts toward the number, more the heavier it is</dd>
+      </dl></div>
+      <div class="spec-group"><h3>Set 1 · Storage · weight = value</h3><dl>
+        <dt>Offline downloads</dt><dd>0–100 GB, number rides the rope (see above); unit in the row head</dd>
+        <dt>Keep for</dt><dd>1 · 7 · 30 · 90 days, labels at the ends only, dots at 7 · 30; number sits on the rope like Offline downloads</dd>
+        <dt>Stop weight</dt><dd>0.4 · 1 · 1.9 · 3</dd>
+        <dt>Tap / key</dt><dd>the rope snaps back and throws the ball to the stop: first the rope sinks 3 + 10 × current value (70–180 ms, heavier = deeper and longer), then snaps up and throws it, arc 20 + 0.1 × distance high; in the air the number tucks into a 12 ball and pops back out on landing, gravity 2600; lands and the rope sinks harder the bigger the new value (impulse 16 + 70 × value); one bounce, 36% → 14% as it gets heavier; the row panel knocks (Week 3 shape, 360 ms, ≤ 2 down and ≤ 0.7°, pivot on the far end) and its letters hop in a ripple out from where it landed (≤ ~4), all scaled by fall speed × weight</dd>
+        <dt>Drag</dt><dd>ball follows; released, carried 3 up and dropped onto the nearest stop</dd>
+        <dt>Card</dt><dd>tips toward the weight, ≤ 1.6°</dd>
+      </dl></div>
+      <div class="spec-group"><h3>Set 2 · weight = position</h3><dl>
+        <dt>Visible within</dt><dd>1–100 km, 1 km steps</dd>
+        <dt>Usage data</dt><dd>Essential · Basic · Enhanced · Full</dd>
+        <dt>Lever</dt><dd>pivot at the 0 end; level at 0 → 3° at the far end</dd>
+        <dt>Lever spring</dt><dd>k 60, c 7 (slow, one overshoot)</dd>
+        <dt>Card</dt><dd>follows the lever at 30%</dd>
+        <dt>Full</dt><dd>hold 500 ms at the gate; tap teases</dd>
+        <dt>Hover · test press</dt><dd>pointer on the track (not the ball): the lever (rigid, no dent) leans up to +1.1° as if pressed there; the head shows "→ value" there</dd>
+        <dt>Drag · carry</dt><dd>the ball is lifted 12 off the lever, its shadow left on the track; the lever carries 35% of its weight; release drops it and the lever takes it all with a knock</dd>
+        <dt>Drag · slope</dt><dd>continuous only: set down, it rolls 12 + 28 × value px further out (≈ 4–15 km), friction 300 px/s²</dd>
+        <dt>Letters</dt><dd>loose, as in Week 3: the labels' letters slide downhill with the card's tilt (20 px per degree, 0.12° friction, each letter its own grip 0.04–0.26° and weight ×0.7–1.3), pile against a wall at the end of the longest label, knock (40%), tumble ≤ 2.5°, follow the card 0.25 s late, drift home when it levels</dd>
+      </dl></div>
+      <div class="spec-group"><h3>Motion</h3><dl>
+        <dt>Ball follow</dt><dd>spring k 1600, c 80 (no overshoot)</dd>
+        <dt>Track bend</dt><dd>spring k 320, c 14</dd>
+        <dt>Drop</dt><dd>gravity 2600 px/s², bounce 0.3</dd>
+        <dt>Tooltip</dt><dd>spring k 200, c 9</dd>
+        <dt>Card</dt><dd>tilt k 120 c 12; dip k 200 c 16</dd>
+        <dt>Reduced motion</dt><dd>values jump, nothing swings</dd>
+        <dt>Controls</dt><dd>dock: white, padding 5, radius full; buttons 38 high, #F6F6F8, Geist Medium 13; Spec open = #17181B</dd>
+      </dl></div>
+    </div>
+  </section>
+</main>
+
+<script>
+(() => {
+  const REDUCE = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const $ = (id) => document.getElementById(id);
+  const SVGNS = 'http://www.w3.org/2000/svg';
+  const W = 248, CY = 20, X0 = 11, X1 = 237, L0 = 4, L1 = 244;
+  const stopsX = (n) => Array.from({ length: n }, (_, i) => X0 + (X1 - X0) * i / (n - 1));
+  const G = 2600;
+  let speed = 1;
+  const hint = $('hint');
+  let hintTimer = 0;
+  function say(text, nudge, ms) {
+    hint.textContent = text; hint.classList.toggle('is-nudge', !!nudge);
+    clearTimeout(hintTimer);
+    if (ms) hintTimer = setTimeout(() => { hint.textContent = ''; hint.classList.remove('is-nudge'); }, ms);
+  }
+
+  function spring(s, target, k, c, dt) {
+    if (REDUCE) { s.x = target; s.v = 0; return; }
+    s.v += (-k * (s.x - target) - c * s.v) * dt;
+    s.x += s.v * dt;
+  }
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+  const rand = (a, b) => a + Math.random() * (b - a);
+
+  // Elastic track pinned at both ends: the deepest point is always under the ball, rounded there,
+  // a little stiffer close to the pins.
+  function beam(u, p) {
+    p = clamp(p, 0.02, 0.98);
+    const ends = 0.45 + 0.55 * Math.sin(Math.PI * p);
+    const t = u <= p ? 1 - u / p : 1 - (1 - u) / (1 - p);
+    return ends * (1 - t * t);
+  }
+
+  // Rope pinned at both ends with the number hanging on it: the lowest point is always under the number,
+  // the rope runs nearly straight from there to each pin. Depth is set by the weight (the value);
+  // close to a pin the rope can give a little less.
+  function rope(u, p) {
+    u = clamp(u, 0, 1); p = clamp(p, 0.02, 0.98);
+    const ends = 0.75 + 0.25 * 4 * p * (1 - p);
+    const t = u <= p ? u / p : (1 - u) / (1 - p);
+    return ends * (0.9 * t + 0.1 * (1 - (1 - t) * (1 - t)));
+  }
+
+  /* ---------- Cards ---------- */
+  const cards = {};
+  for (const id of ['card1', 'card3']) cards[id] = { el: $(id), rot: { x: 0, v: 0 }, dip: { x: 0, v: 0 }, rotT: 0, dipT: 0, sliders: [] };
+
+  /* ---------- Sliders ---------- */
+  const fmtKm = (v) => Math.round(1 + v * 99) + ' km';
+  const DEFS = [
+    { id: 'vol', card: 'card1', kind: 'weight', rope: true, hop: true, unit: 'GB', value: 0.4, num: (v) => String(Math.round(v * 100)), text: (v) => Math.round(v * 100) + ' GB' },
+    { id: 'freq', card: 'card1', kind: 'weight', hop: true, rope: true, unit: 'days', stops: ['1 day', '7 days', '30 days', '90 days'], labels: ['1', '7', '30', '90'], vals: ['1', '7', '30', '90'], weights: [0.4, 1, 1.9, 3], value: 1 },
+    { id: 'range', card: 'card3', kind: 'lever', value: 24 / 99, text: fmtKm },
+    { id: 'prec', card: 'card3', kind: 'lever', stops: ['Essential', 'Basic', 'Enhanced', 'Full'], weights: [0.4, 1, 1.9, 3], value: 1, gate: 3 },
+  ];
+
+  function build(d) {
+    const el = $('s-' + d.id);
+    const stepped = !!d.stops;
+    const svg = document.createElementNS(SVGNS, 'svg');
+    svg.setAttribute('width', W); svg.setAttribute('height', 40); svg.setAttribute('viewBox', `0 0 ${W} 40`);
+    const rail = document.createElementNS(SVGNS, 'path'); rail.setAttribute('class', 'rail');
+    const fill = document.createElementNS(SVGNS, 'path'); fill.setAttribute('class', 'fill');
+    const gid = 'gf-' + d.id, defs = document.createElementNS(SVGNS, 'defs'), grad = document.createElementNS(SVGNS, 'linearGradient');
+    grad.id = gid; grad.setAttribute('gradientUnits', 'userSpaceOnUse'); grad.setAttribute('y1', 0); grad.setAttribute('y2', 0);
+    grad.innerHTML = '<stop offset="0" stop-color="var(--fill-a)"/><stop offset="1" stop-color="var(--fill-b)"/>';
+    defs.append(grad); svg.append(defs);
+    fill.style.stroke = `url(#${gid})`;
+    svg.append(rail);
+    if (d.kind !== 'beads') svg.append(fill);
+    const dots = [];
+    const SX = stepped ? stopsX(d.stops.length) : [];
+    if (stepped) for (let i = 0; i < SX.length; i++) { const c = document.createElementNS(SVGNS, 'circle'); c.setAttribute('r', 1.5); c.setAttribute('class', 'stopdot'); svg.append(c); dots.push(c); }
+    const beads = [];
+    if (d.kind === 'beads') for (let i = 0; i < 30; i++) { const c = document.createElementNS(SVGNS, 'circle'); c.setAttribute('r', 3); c.setAttribute('class', 'bead'); c.style.display = 'none'; svg.append(c); beads.push({ el: c, on: false, y: 0, v: 0, landed: true, x: 4 + 8 * i }); }
+    el.append(svg);
+
+    const ball = document.createElement('div');
+    ball.className = 'ball'; ball.tabIndex = 0; ball.setAttribute('role', 'slider');
+    ball.setAttribute('aria-labelledby', 'n-' + d.id);
+    ball.setAttribute('aria-valuemin', stepped ? 0 : 0); ball.setAttribute('aria-valuemax', stepped ? SX.length - 1 : 100);
+    el.append(ball);
+
+    let tip = null, pill = null;
+    let numb = null;
+    if (d.rope) { numb = document.createElement('div'); numb.className = 'numb'; numb.setAttribute('aria-hidden', 'true'); el.append(numb); }
+    if (d.kind !== 'pill' && !d.rope) { tip = document.createElement('div'); tip.className = 'tip'; tip.setAttribute('aria-hidden', 'true'); tip.innerHTML = '<span></span>'; el.append(tip); }
+    if (d.kind === 'pill') { pill = document.createElement('div'); pill.className = 'pill'; pill.setAttribute('aria-hidden', 'true'); el.append(pill); }
+
+    const labels = [];
+    if (stepped) {
+      const row = document.createElement('div'); row.className = 'stops'; row.setAttribute('aria-hidden', 'true');
+      (d.labels || d.stops).forEach((t, i) => {
+        const s = document.createElement('span');
+        const chars = [];
+        for (const ch of t) { const c = document.createElement('span'); c.className = 'ch'; c.textContent = ch === ' ' ? ' ' : ch; s.append(c); chars.push({ el: c, x: 0, v: 0 }); }
+        row.append(s);
+        labels.push({ el: s, chars });
+      });
+      el.append(row);
+    }
+
+    const s = {
+      SX, grad, d, el, svg, rail, fill, dots, beads, ball, tip, pill, numb, labels, stepped,
+      nl: { x: 0, v: 0 }, nFall: false, nHit: true, nRot: { x: 0, v: 0 }, morph: { x: 1, v: 0 },
+      card: cards[d.card],
+      value: d.value,          // continuous: 0..1; stepped: stop index
+      bx: { x: 0, v: 0 }, tx: 0, rawX: 0, grab: 0,
+      lift: { x: 0, v: 0 }, falling: false, impacted: true, carrying: false,
+      sag: { x: 0, v: 0 }, tilt: { x: 0, v: 0 }, tipRot: { x: 0, v: 0 }, prevV: 0,
+      hover: false, pressed: false, dragging: false, downX: 0, keyT: 0,
+      pillState: 'off', pillY: 0, pillV: 0, pillIdx: -1,
+      gateHold: 0, gateOpen: false, gateTease: false,
+    };
+    if (d.kind === 'lever') el.style.transformOrigin = `${X0}px ${CY}px`;
+    s.time = 0; s.kicks = []; s.knock = null; s.row = el.closest('.srow');
+    s.dimple = { x: 0, v: 0 }; s.fulc = { x: 0, v: 0 }; s.px = 0; s.hx = null;
+    if (d.kind === 'lever') {
+      s.shadowEl = document.createElementNS(SVGNS, 'ellipse'); s.shadowEl.setAttribute('class', 'lift-shadow'); svg.append(s.shadowEl);
+      s.ghost = document.createElement('span'); s.ghost.className = 'ghostval'; s.row.querySelector('.head').append(s.ghost);
+    }
+    s.card.sliders.push(s);
+    placeAt(s, true);
+    wire(s);
+    return s;
+  }
+
+  const xOf = (s) => s.stepped ? s.SX[s.value] : X0 + (X1 - X0) * s.value;
+  const nearest = (x, s) => { let b = 0; s.SX.forEach((sx, i) => { if (Math.abs(sx - x) < Math.abs(s.SX[b] - x)) b = i; }); return b; };
+
+  function placeAt(s, instant) {
+    s.tx = xOf(s);
+    if (instant) {
+      s.bx.x = s.tx; s.bx.v = 0; s.lift.x = 0; s.lift.v = 0; s.falling = false; s.carrying = false;
+      s.sag.x = sagTarget(s); s.sag.v = 0; s.tilt.x = tiltTarget(s); s.tilt.v = 0; s.tipRot.x = s.tipRot.v = 0;
+      if (s.d.kind === 'beads') { const n = beadCount(s); s.beads.forEach((b, i) => { b.on = i < n; b.y = 0; b.v = 0; b.landed = true; }); }
+      if (s.d.kind === 'pill') { s.pillHit = false; seatPill(s, true); }
+    }
+    syncAria(s);
+  }
+
+  function setBig(id, t) {
+    const el = $('v-' + id); if (!el) return;
+    const m = /^([\d.,]+)\s*(.*)$/.exec(t);
+    const html = m ? `<b>${m[1]}</b><span>${m[2]}</span>` : `<b>${t}</b>`;
+    if (el.dataset.t !== t) { el.dataset.t = t; el.innerHTML = html; }
+  }
+  function syncAria(s) {
+    if (s.stepped) {
+      s.ball.setAttribute('aria-valuenow', s.value);
+      s.ball.setAttribute('aria-valuetext', s.d.stops[s.value] + (s.d.pills && s.d.pills[s.value] ? ', ' + s.d.pills[s.value] + ' people' : ''));
+      s.labels.forEach((l, i) => l.el.classList.toggle('on', i === s.value));
+      if (s.d.unit) { const u = $('v-' + s.d.id); if (u.textContent !== s.d.unit) u.textContent = s.d.unit; } else setBig(s.d.id, s.d.stops[s.value]);
+    } else {
+      const t = s.d.text(s.value);
+      s.ball.setAttribute('aria-valuenow', Math.round(s.value * 100));
+      s.ball.setAttribute('aria-valuetext', t);
+      if (s.d.rope) { const u = $('v-' + s.d.id); if (u.textContent !== s.d.unit) u.textContent = s.d.unit; } else setBig(s.d.id, t);
+    }
+  }
+
+  /* ---------- Weight per kind ---------- */
+  const uOf = (x) => (x - L0) / (L1 - L0);
+  const contV = (s) => clamp((s.bx.x - X0) / (X1 - X0), 0, 1);   // where the ball is now, 0..1
+  function stopW(s) { return s.d.weights ? s.d.weights[s.value] : 0.4 + 2.6 * s.value; }   // continuous: weight grows with the value
+  function sagTarget(s) {
+    switch (s.d.kind) {
+      case 'weight': if (s.windup) return 1.5 + 10.5 * contV(s) + s.windup.D;
+        return s.d.rope && s.stepped ? (s.flight ? 0 : (1.5 + 10.5 * contV(s)) * (numUp(s) && !s.dragging ? 0.88 : 1)) : s.stepped ? (s.flight ? 0 : s.carrying || s.dragging ? 0.6 : 1.4 * stopW(s)) : s.d.rope ? (s.flight ? 0 : (1.5 + 10.5 * contV(s)) * (numUp(s) ? 0.88 : 1)) : 1 + 4 * contV(s);
+      case 'pill': return s.pillState === 'seated' ? 1.2 * stopW(s) : 0.4;
+      default: return 0;
+    }
+  }
+  const numUp = (s) => !s.flight && !s.windup && (s.hover || s.pressed || s.dragging || s.keyT > 0);   // in a hop the number stays on the ball
+  function leverMass(v) { return 0.5 + v; }
+  function tiltTarget(s) {
+    if (s.d.kind !== 'lever') return 0;
+    const v = contV(s);
+    let t = 3 * leverMass(v) * v / 1.5;           // pivot at the 0 end: at 0 the ball sits on the pivot, level
+    if (s.dragging || s.carrying) t *= 0.35;      // carried: the hand holds most of the ball's weight
+    if (s.probeOn) t += 1.1 * s.probeU;           // a finger testing the lever there
+    return t;
+  }
+  function beadCount(s) { return Math.floor(Math.round(contV(s) * 300) / 10); }
+
+  /* ---------- Input ---------- */
+  function local(s, e) {
+    const m = s.svg.getScreenCTM();
+    if (!m) return { x: 0, y: 0 };
+    return new DOMPoint(e.clientX, e.clientY).matrixTransform(m.inverse());
+  }
+  function wire(s) {
+    s.el.addEventListener('pointerenter', () => { s.hover = true; });
+    s.el.addEventListener('pointerleave', () => { s.hover = false; s.hx = null; });
+    s.el.addEventListener('pointermove', (e) => { if (s.d.kind === 'lever') s.hx = clamp(local(s, e).x, X0, X1); });
+    s.el.addEventListener('pointerdown', (e) => {
+      if (e.button !== 0) return;
+      e.preventDefault();
+      s.el.setPointerCapture(e.pointerId);
+      s.ball.focus({ preventScroll: true });
+      const p = local(s, e);
+      s.grab = e.target === s.ball ? s.bx.x - p.x : 0;
+      s.rawX = clamp(p.x + s.grab, X0, X1);
+      s.downX = e.clientX;
+      s.pressed = true; s.dragging = false; s.falling = false; s.carrying = false;
+      s.gateHold = 0; s.gateOpen = s.d.gate != null && s.value >= s.d.gate; s.gateTease = false;
+      pressShake(s);
+    });
+    s.el.addEventListener('pointermove', (e) => {
+      if (!s.pressed) return;
+      const p = local(s, e);
+      s.rawX = clamp(p.x + s.grab, X0, X1);
+      if (!s.dragging && Math.abs(e.clientX - s.downX) > (s.d.hop ? 8 : 3)) s.dragging = true;   // a click that wobbles a little is still a click
+    });
+    const up = () => {
+      if (!s.pressed) return;
+      const wasDrag = s.dragging;
+      s.pressed = false; s.dragging = false;
+      if (s.stepped) {
+        let i = nearest(s.rawX, s);
+        if (s.d.gate != null && !s.gateOpen && i >= s.d.gate) i = s.d.gate - 1;
+        if (s.gateTease) say('Hold against it to share full data.', true, 2200);
+        if (s.d.hop && !wasDrag && i !== s.value) hop(s, i); else land(s, i);
+      } else if (s.d.hop && !wasDrag && Math.abs(s.rawX - s.bx.x) > 4) {
+        hopTo(s, s.rawX, () => { s.value = clamp((s.rawX - X0) / (X1 - X0), 0, 1); });
+      } else {
+        s.value = clamp((s.rawX - X0) / (X1 - X0), 0, 1);
+        syncAria(s);
+        if (s.d.kind === 'lever' && wasDrag && !REDUCE) { s.falling = true; s.impacted = false; s.lift.v = 0; s.rollNext = true; }
+      }
+    };
+    s.el.addEventListener('pointerup', up);
+    s.el.addEventListener('pointercancel', up);
+    s.ball.addEventListener('keydown', (e) => {
+      let dir = 0, big = false;
+      if (e.key === 'ArrowRight' || e.key === 'ArrowUp') dir = 1;
+      else if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') dir = -1;
+      else if (e.key === 'PageUp') { dir = 1; big = true; }
+      else if (e.key === 'PageDown') { dir = -1; big = true; }
+      else if (e.key === 'Home') dir = -9;
+      else if (e.key === 'End') dir = 9;
+      else return;
+      e.preventDefault();
+      if (s.stepped) {
+        const last = s.SX.length - 1, i = clamp(dir === 9 ? last : dir === -9 ? 0 : s.value + dir, 0, last);
+        if (i !== s.value) (s.d.hop ? hop : land)(s, i);
+      } else {
+        const step = big || e.shiftKey ? 0.1 : 0.01;
+        s.value = clamp(dir === 9 ? 1 : dir === -9 ? 0 : Math.round((s.value + dir * step) * 100) / 100, 0, 1);
+        s.rawX = xOf(s); s.keyT = 0.9;
+        syncAria(s);
+      }
+    });
+    s.ball.addEventListener('focus', () => { if (s.ball.matches(':focus-visible') && !document.documentElement.classList.contains('pointer-mode')) s.keyT = 0.9; });
+  }
+
+  // Press: the side under the ball gives a little, once.
+  function pressShake(s) {
+    if (REDUCE) return;
+    s.sag.v += 18;
+    if (s.d.kind === 'lever') s.tilt.v += contV(s) * rand(3, 5);
+    if (s.d.kind === 'beads') s.card.dip.v += 6;
+  }
+
+  // Stepped release / key: carry the ball to the stop, then drop it in.
+  function land(s, i) {
+    const changed = i !== s.value;
+    s.value = i;
+    s.tx = s.SX[i];
+    s.carrying = true; s.falling = false;
+    if (REDUCE) { s.bx.x = s.tx; s.carrying = false; impact(s, 0); }
+    syncAria(s);
+    if (changed && s.d.kind === 'pill' && s.pillState !== 'off') flickPill(s);
+  }
+
+  // Tap (or key): the rope, pressed down by the finger, springs back and throws the ball over to the stop.
+  // Higher arc for a longer throw; it lands, the rope takes it, it bounces once.
+  function hop(s, i) { hopTo(s, s.SX[i], () => { s.value = i; }); }
+  // The heavier it already is, the harder the rope has to work: it sinks deeper and longer before it throws.
+  function hopTo(s, x1, commit) {
+    const x0 = s.bx.x, m = contV(s);
+    commit(); s.tx = x1; s.hopX = x1; syncAria(s);
+    if (REDUCE) { s.bx.x = x1; impact(s, 0); return; }
+    s.windup = { t: 0, T: 0.07 + 0.11 * m, D: 3 + 10 * m, m, x0, x1 };
+    s.carrying = false; s.falling = false;
+    if (s.nl) { s.nl.x = 0; s.nl.v = 0; s.nFall = false; s.nHit = true; s.nRot.x = 0; s.nRot.v = 0; }
+  }
+  function launch(s) {
+    const { x0, x1, m } = s.windup, dx = Math.abs(x1 - x0);
+    s.windup = null;
+    const h = 20 + 0.1 * dx, vy = Math.sqrt(2 * G * h), T = 2 * vy / G;
+    s.flight = { x0, x1, t: 0, T };
+    s.dentX = x0;                                   // the rope recoils where it threw from
+    s.falling = true; s.impacted = false;
+    s.lift.x = 0; s.lift.v = -vy;
+    s.sag.v -= 50 + 90 * m;                         // the snap: harder for a heavier ball
+  }
+  function impact(s, vy) {
+    const w = stopW(s);
+    if (REDUCE) { if (s.d.kind === 'pill') seatPill(s, true); return; }
+    const u = (s.bx.x - W / 2) / (W / 2);
+    s.sag.v += s.d.rope ? 16 + 70 * contV(s) : 14 + 10 * w;   // rope: the bigger the number it lands as, the deeper it sinks
+    if (s.d.kind === 'weight') { s.card.rot.v += u * w * 4; s.card.dip.v += w * 6; }
+    if (s.d.kind === 'lever') { s.tilt.v += contV(s) * (2 + w * 2) * 1.6; }
+    if (s.rollNext) { s.rollNext = false; const d = 12 + 28 * contV(s); s.roll = { v: Math.sqrt(2 * 300 * d) }; }   // down the slope: ≈ 4–15 km, further the steeper
+    jolt(s, s.value, 0.6 + w * 0.5);
+    if (s.d.kind === 'pill') seatPill(s, false);
+    if (s.d.rope && s.row) {
+      // How hard it lands: fall speed (longer throw = higher = faster) × weight of the new value.
+      const e = clamp(Math.abs(vy) / 470, 0.15, 1.1), amp = e * (0.3 + 0.7 * contV(s));
+      const side = s.bx.x > W / 2 ? 1 : -1;
+      s.knock = { t0: s.time, amp, side };
+      s.row.style.transformOrigin = side > 0 ? '0% 50%' : '100% 50%';           // the far end is the pivot; the near end dips
+      // letters: closer to where it landed, sooner and harder
+      const rowL = s.row.getBoundingClientRect().left + 14, scale = s.row.getBoundingClientRect().width / s.row.offsetWidth || 1;
+      const all = [...(s.tchars || []), ...s.labels.flatMap((l) => l.chars)];
+      for (const c of all) {
+        const r = c.el.getBoundingClientRect(), lx = (r.left + r.width / 2 - rowL) / scale, dx = Math.abs(lx - s.bx.x);
+        s.kicks.push({ at: s.time + dx / 700, c, dv: -(22 + 75 * amp) * Math.exp(-dx / 240) * rand(0.8, 1.2) });
+      }
+    }
+  }
+
+  function jolt(s, i, k) {
+    s.labels.forEach((l, j) => {
+      const f = j === i ? 1 : Math.abs(j - i) === 1 ? 0.3 : 0;
+      if (!f) return;
+      l.chars.forEach((c) => { c.v -= 0.6 * k * f * rand(40, 110); });   // ≤ ~4, Week 3 letter scale
+    });
+  }
+
+  /* ---------- Set 2: pill + beads ---------- */
+  function seatPill(s, instant) {
+    const t = s.d.pills[s.value];
+    s.pillIdx = s.value;
+    if (!t) { s.pillState = 'off'; return; }
+    s.pill.textContent = t;
+    if (instant) { s.pillState = 'seated'; s.pillY = 0; s.pillV = 0; return; }
+    s.pillState = 'falling'; s.pillY = -14; s.pillV = 0;
+  }
+  const ghosts = [];
+  function flickPill(s) {
+    if (REDUCE) { s.pillState = 'off'; return; }
+    const g = s.pill.cloneNode(true);
+    g.style.transform = s.pill.style.transform; g.style.opacity = 1;
+    s.el.append(g);
+    const w = s.d.weights[s.pillIdx] || 1;
+    const apex = [0, 30, 22, 15][s.pillIdx] || 20, reach = [0, 20, 16, 12][s.pillIdx] || 14, spin = [0, 260, 190, 130][s.pillIdx] || 180;
+    const dir = s.rawX >= s.bx.x ? -1 : 1;
+    ghosts.push({ kind: 'div', el: g, x: s.bx.x, y: pillTop(s), vx: dir * reach / 0.42 * 1.3, vy: -Math.sqrt(2 * 1400 * apex), rot: 0, vr: dir * spin / 0.42, t: 0, life: 0.42, g: 1400, w });
+    s.pillState = 'off';
+  }
+  function flickBead(s, b) {
+    if (REDUCE) return;
+    const c = document.createElementNS(SVGNS, 'circle');
+    c.setAttribute('r', 3); c.setAttribute('class', 'ghost');
+    s.svg.append(c);
+    ghosts.push({ kind: 'svg', el: c, x: b.x, y: CY + b.y, vx: rand(-90, -30), vy: -Math.sqrt(2 * 1400 * rand(14, 26)), t: 0, life: rand(0.36, 0.46), g: 1400 });
+  }
+  const pillTop = (s) => ballY(s) - 10 - 2 - 8;   // pill centre: 2 above the ball
+
+  /* ---------- Frame ---------- */
+  function trackY(s, x) { return CY + s.sag.x * (s.d.rope ? rope : beam)(uOf(x), uOf(s.dentX !== undefined ? s.dentX : s.bx.x)); }
+  function ballY(s) { return trackY(s, s.bx.x) + s.lift.x; }
+
+  function stepSlider(s, dt) {
+    const d = s.d;
+    // Where the ball wants to be.
+    let tx = s.tx;
+    if (s.pressed) {
+      tx = d.hop && !s.dragging ? xOf(s) : s.rawX;
+      if (d.gate != null && !s.gateOpen) {
+        const gx = (s.SX[d.gate - 1] + s.SX[d.gate]) / 2;
+        if (s.rawX > gx - 8) {
+          s.gateHold += dt;
+          s.gateTease = true;
+          const shake = REDUCE ? 0 : (0.4 + s.gateHold * 2.4) * (Math.random() * 2 - 1);
+          tx = gx - 8 + shake;
+          if (!REDUCE) s.tilt.v += (Math.random() * 2 - 1) * 8 * dt * 60 * 0.02;
+          say(s.gateHold < 0.5 ? 'Keep holding…' : '', true);
+          if (s.gateHold >= 0.5) { s.gateOpen = true; s.gateTease = false; s.tilt.v += 6; s.sag.v += 30; say('', false); }
+        } else { s.gateHold = 0; }
+      }
+      if (d.gate != null && s.gateOpen && s.rawX < (s.SX[d.gate - 1] + s.SX[d.gate]) / 2 - 30) s.gateOpen = false;
+      if (!s.stepped) { s.value = clamp((tx - X0) / (X1 - X0), 0, 1); syncAria(s); }
+    } else if (!s.stepped) tx = xOf(s);
+    if (s.windup) { s.windup.t += dt; s.lift.x += (0 - s.lift.x) * Math.min(1, dt * 40); if (s.windup.t >= s.windup.T) launch(s); }
+    if (s.flight) {
+      const fl = s.flight; fl.t += dt;
+      const u = Math.min(1, fl.t / fl.T);
+      s.bx.x = fl.x0 + (fl.x1 - fl.x0) * u; s.bx.v = (fl.x1 - fl.x0) / fl.T;
+      if (u >= 1) { s.flight = null; s.bx.v = 0; }
+    } else if (s.windup) { s.bx.v = 0; } else if (s.roll) { /* rolling */ } else spring(s.bx, tx, 1600, 80, dt);
+
+    // Stepped: during drag, preview the nearest stop's label. On release, carry then drop.
+    if (s.stepped) {
+      const near = nearest(s.bx.x, s);
+      if (s.pressed) s.labels.forEach((l, i) => l.el.classList.toggle('on', i === near));
+      if (d.kind === 'pill' && s.pressed && s.pillState !== 'off' && Math.abs(s.bx.x - s.SX[s.pillIdx]) > 12) flickPill(s);
+      if (s.carrying && Math.abs(s.bx.x - s.tx) < 0.6 && Math.abs(s.bx.v) < 40) {
+        s.carrying = false; s.falling = true; s.impacted = false; s.lift.v = 0;
+      }
+    }
+
+    // Lift: hover 1 up, pressed 1.5 in, drag 3 up. Drops fall under gravity.
+    if (s.falling) {
+      s.lift.v += G * dt; s.lift.x += s.lift.v * dt;
+      if (s.lift.x >= 0) {
+        s.lift.x = 0;
+        if (!s.impacted) { s.impacted = true; s.flight = null; s.dentX = undefined; if (s.hopX !== undefined) { s.bx.x = s.hopX; s.hopX = undefined; } impact(s, s.lift.v); }
+        if (s.lift.v > 45) s.lift.v *= s.d.rope ? -(0.36 - 0.22 * contV(s)) : -0.3; else { s.lift.v = 0; s.falling = false; }
+      }
+    } else {
+      const lt = s.dragging || s.carrying ? (d.kind === 'lever' ? -12 : -3) : s.pressed ? 1.5 : (s.hover ? -1 : 0);
+      spring(s.lift, lt, 520, 32, dt);
+    }
+
+    spring(s.sag, sagTarget(s), s.windup ? 900 : 320, s.windup ? 40 : 14, dt);
+    if (d.kind === 'lever') {
+      // Hover · test press: a finger rests on the lever where the pointer is (not on the ball, not while pressing)
+      s.probeOn = s.hover && !s.pressed && s.hx != null && Math.abs(s.hx - s.bx.x) > 14 && !s.roll;
+      if (s.probeOn) { s.pxT = s.stepped ? s.SX[nearest(s.hx, s)] : s.hx; s.probeU = (s.pxT - X0) / (X1 - X0); if (s.stepped && nearest(s.hx, s) === s.value) s.probeOn = false; }
+      spring(s.dimple, s.probeOn ? 1 : 0, 500, 26, dt);   // probe strength only; a lever is rigid, it does not dent
+      if (s.probeOn) s.px = s.dimple.x < 0.05 ? s.pxT : s.px + (s.pxT - s.px) * Math.min(1, dt * 25);
+      // Hover · the pivot shows itself
+      spring(s.fulc, s.hover || s.pressed ? 1 : 0, 260, 24, dt);
+      // Drag · slippery slope: set down, it rolls a little further out before friction holds it
+      if (s.roll) {
+        s.bx.x += s.roll.v * dt; s.roll.v -= 300 * dt;
+        if (s.bx.x >= X1) { s.bx.x = X1; s.roll.v = 0; }
+        if (s.stepped) s.roll = null;
+        else { s.value = clamp((s.bx.x - X0) / (X1 - X0), 0, 1); s.tx = s.bx.x; syncAria(s); if (s.roll.v <= 0) { s.roll = null; s.bx.v = 0; } }
+      }
+      spring(s.tilt, tiltTarget(s), 60, 7, dt);
+    }
+
+    // Tooltip swings on its pointer, lagging the ball's change of speed.
+    const dv = s.bx.v - s.prevV; s.prevV = s.bx.v;
+    if (s.tip && !REDUCE) {
+      const m = d.kind === 'weight' ? 0.6 + contV(s) : 1;
+      s.tipRot.v -= dv * 0.1 * m;
+      spring(s.tipRot, 0, 200 / m, 9, dt);
+      s.tipRot.x = clamp(s.tipRot.x, -12, 12);
+    }
+
+    // Rope: the number lifts off on hover (the rope gives back some of its weight) and drops back onto the knob.
+    if (s.numb) {
+      const NUP = -26;
+      if (numUp(s)) { s.nFall = false; s.nHit = false; spring(s.nl, NUP, 420, 24, dt); }
+      else if (s.nl.x < -0.01 || s.nFall) {
+        if (!s.nFall) { s.nFall = true; s.nl.v = Math.max(s.nl.v, 0); }
+        s.nl.v += G * dt; s.nl.x += s.nl.v * dt;
+        if (s.nl.x >= 0) {
+          s.nl.x = 0;
+          if (!s.nHit && !REDUCE) { s.nHit = true; const m = 0.35 + contV(s), k = clamp(s.nl.v / 450, 0, 1); s.sag.v += (10 + 26 * m) * k; s.card.dip.v += 5 * m * k; }
+          if (s.nl.v > 60) s.nl.v *= -0.22; else { s.nl.v = 0; s.nFall = false; }
+        }
+      }
+      if (!REDUCE) {
+        const m = 0.6 + contV(s);
+        if (!s.flight) s.nRot.v -= dv * 0.1 * m * clamp(-s.nl.x / 26, 0, 1); else { s.nRot.x = 0; s.nRot.v = 0; }
+        spring(s.nRot, 0, 200 / m, 9, dt);
+        s.nRot.x = clamp(s.nRot.x, -12, 12);
+      }
+    }
+
+    if (s.numb) {
+      if (s.flight) spring(s.morph, 0, 1400, 60, dt);         // tucks into the ball as it leaves
+      else spring(s.morph, 1, 700, 20, dt);                   // pops back out on landing, a touch past full
+    }
+
+    s.time += dt;
+    if (s.kicks.length) s.kicks = s.kicks.filter((k) => { if (s.time >= k.at) { if (!REDUCE) k.c.v += k.dv; return false; } return true; });
+    if (s.tchars) for (const c of s.tchars) spring(c, 0, 520, 16, dt);
+
+    // Labels' letters settle.
+    for (const l of s.labels) for (const c of l.chars) { spring(c, 0, 520, 16, dt); }
+
+    // Pill falls onto the ball.
+    if (d.kind === 'pill' && s.pillState === 'falling') {
+      s.pillV += G * dt; s.pillY += s.pillV * dt;
+      if (s.pillY >= 0) {
+        s.pillY = 0;
+        if (s.pillV > 60) {
+          if (!s.pillHit) { s.pillHit = true; const w = stopW(s); s.sag.v += 16 + 14 * w; s.card.dip.v += 10 * w; jolt(s, s.value, 0.5 + w * 0.5); }
+          s.pillV *= -0.3;
+        } else { s.pillV = 0; s.pillState = 'seated'; s.pillHit = false; }
+      }
+    }
+
+    // Beads: one per 10 photos, dropping in as the ball passes, flicked out when it comes back.
+    if (d.kind === 'beads') {
+      const n = beadCount(s);
+      s.beads.forEach((b, i) => {
+        if (i < n && !b.on) { b.on = true; b.y = REDUCE ? 0 : -14; b.v = 0; b.landed = REDUCE; }
+        else if (i >= n && b.on) { b.on = false; flickBead(s, b); }
+        if (b.on && !b.landed) {
+          b.v += G * dt; b.y += b.v * dt;
+          if (b.y >= 0) { b.y = 0; if (b.v > 60) { if (!b.hit) { b.hit = true; s.card.dip.v += 4; } b.v *= -0.3; } else { b.v = 0; b.landed = true; b.hit = false; } }
+        }
+      });
+    }
+  }
+
+  const KMS = 0.36, kShape = (u) => Math.sin(2 * Math.PI * u * 360 / 170) * Math.exp(-3.2 * u) * (1 - u);
+  function render(s) {
+    if (s.row) {
+      let tf = '';
+      if (s.knock && !REDUCE) {
+        const u = (s.time - s.knock.t0) / KMS;
+        if (u >= 1) s.knock = null;
+        else { const k = kShape(u) * s.knock.amp; tf = `translateY(${(2 * k).toFixed(2)}px) rotate(${(s.knock.side * 0.7 * k).toFixed(3)}deg)`; }
+      }
+      s.row.style.transform = tf;
+    }
+    if (s.tchars) for (const c of s.tchars) c.el.style.transform = Math.abs(c.x) > 0.05 ? `translateY(${c.x.toFixed(2)}px)` : '';
+    // Track
+    const pts = [], fillPts = [];
+    for (let i = 0; i <= 34; i++) {
+      const x = L0 + (L1 - L0) * i / 34;
+      pts.push([x, trackY(s, x)]);
+    }
+    const bxp = s.bx.x;
+    s.grad.setAttribute('x1', L0); s.grad.setAttribute('x2', Math.max(L0 + 1, bxp));
+    for (const p of pts) if (p[0] < bxp) fillPts.push(p);
+    fillPts.push([bxp, trackY(s, bxp)]);
+    const toD = (a) => 'M' + a.map((p) => p[0].toFixed(2) + ' ' + p[1].toFixed(2)).join('L');
+    s.rail.setAttribute('d', toD(pts));
+    if (s.d.kind !== 'beads') s.fill.setAttribute('d', fillPts.length > 1 ? toD(fillPts) : `M${L0} ${CY}L${L0 + 0.01} ${CY}`);
+    s.dots.forEach((c, i) => { c.setAttribute('cx', s.SX[i]); c.setAttribute('cy', trackY(s, s.SX[i])); c.classList.toggle('under', s.SX[i] < bxp - 1); });
+    s.beads.forEach((b) => { b.el.style.display = b.on ? '' : 'none'; if (b.on) { b.el.setAttribute('cx', b.x); b.el.setAttribute('cy', (trackY(s, b.x) + b.y).toFixed(2)); } });
+
+    // Ball
+    const by = ballY(s);
+    s.ball.style.transform = `translate(${bxp.toFixed(2)}px, ${by.toFixed(2)}px)`;
+    const up = -s.lift.x;
+    let sh;
+    if (s.lift.x > 0.3) sh = '0 0 2px rgba(var(--ball-shadow), 0.3)';
+    else sh = `0 ${(1 + up * 1.7).toFixed(1)}px ${(3 + up * 3.7).toFixed(1)}px rgba(var(--ball-shadow), ${(0.22 + up * 0.013).toFixed(3)})`;
+    s.ball.style.setProperty('--sh', sh);
+
+    // Tooltip
+    if (s.tip) {
+      const show = s.hover || s.pressed || s.dragging || s.keyT > 0;
+      s.tip.classList.toggle('show', show);
+      const span = s.tip.firstChild;
+      const t = s.stepped ? s.d.stops[nearest(bxp, s)] : s.d.text(contV(s));
+      if (span.textContent !== t) span.textContent = t;
+      const w = s.tip.offsetWidth;
+      s.tip.style.transform = `translate(${(bxp - w / 2).toFixed(2)}px, ${(by - 10 - 6 - 30).toFixed(2)}px) rotate(${s.tipRot.x.toFixed(2)}deg)`;
+    }
+    // Number on the rope
+    if (s.numb) {
+      const t = s.stepped ? s.d.vals[s.value] : s.d.num(contV(s));
+      if (s.numb.textContent !== t) s.numb.textContent = t;
+      const w = s.numb.offsetWidth, up = clamp(-s.nl.x / 26, 0, 1);
+      const m = clamp(s.morph.x, 0, 1.15), sx = (12 + (w - 12) * m) / w, sy = (12 + 12 * m) / 24;   // m 0: the 12 ball, 1: the number
+      s.numb.style.transform = `translate(${(bxp - w / 2).toFixed(2)}px, ${(by - 12 + s.nl.x).toFixed(2)}px) translate(${(w / 2).toFixed(2)}px, 24px) rotate(${s.nRot.x.toFixed(2)}deg) translate(0, -12px) scale(${sx.toFixed(3)}, ${sy.toFixed(3)}) translate(${(-w / 2).toFixed(2)}px, -12px)`;
+      s.numb.style.color = m < 0.6 ? 'transparent' : '';
+      s.numb.style.boxShadow = `0 0 0 2px var(--panel), 0 ${(1 + up * 5).toFixed(1)}px ${(2 + up * 10).toFixed(1)}px rgba(var(--ball-shadow), ${(0.12 + up * 0.1).toFixed(3)})`;
+    }
+    // Pill
+    if (s.pill) {
+      s.pill.style.display = s.pillState === 'off' ? 'none' : '';
+      if (s.pillState !== 'off') {
+        const w = s.pill.offsetWidth;
+        s.pill.style.transform = `translate(${(bxp - w / 2).toFixed(2)}px, ${(pillTop(s) - 8 + s.pillY).toFixed(2)}px)`;
+      }
+    }
+    // Stop labels
+    s.labels.forEach((l, i) => {
+      const x = s.SX[i];
+      const w = l.el.offsetWidth;
+      const left = i === 0 ? 0 : i === s.SX.length - 1 ? W - w : x - w / 2;
+      l.el.style.left = left + 'px';
+      for (const c of l.chars) c.el.style.transform = Math.abs(c.x) > 0.05 ? `translateY(${c.x.toFixed(2)}px)` : '';
+    });
+    // Lever
+    if (s.shadowEl) {
+      // lifted off the lever: its shadow stays on the track, smaller and fainter the higher it is
+      const up = clamp(-s.lift.x / 12, 0, 1);
+      s.shadowEl.setAttribute('cx', bxp.toFixed(2)); s.shadowEl.setAttribute('cy', (trackY(s, bxp) + 1).toFixed(2));
+      s.shadowEl.setAttribute('rx', (7 - 2 * up).toFixed(2)); s.shadowEl.setAttribute('ry', (2.4 - 0.6 * up).toFixed(2));
+      s.shadowEl.style.opacity = (up > 0.08 ? 0.12 + 0.18 * up : 0).toFixed(3);
+      const show = s.probeOn && s.dimple.x > 0.3;
+      let g = '';
+      if (show) { const u = clamp((s.px - X0) / (X1 - X0), 0, 1); g = s.stepped ? s.d.stops[nearest(s.px, s)] : s.d.text(u); }
+      if (s.ghost.textContent !== g) s.ghost.textContent = g;
+      s.ghost.classList.toggle('on', show);
+      s.row.classList.toggle('probing', show);
+    }
+    s.el.style.transform = s.d.kind === 'lever' && Math.abs(s.tilt.x) > 0.002 ? `rotate(${s.tilt.x.toFixed(3)}deg)` : '';
+  }
+
+  function stepCard(c, dt) {
+    let rot = 0, dip = 0;
+    for (const s of c.sliders) {
+      const u = (s.bx.x - W / 2) / (W / 2);
+      if (s.d.rope) {
+        const p = contV(s);
+        rot += p * u * 0.8; dip += 1.4 * p;
+      } else if (s.d.kind === 'weight') {
+        const m = s.stepped ? stopW(s) / 3 : contV(s);
+        rot += m * u * 0.8;
+      } else if (s.d.kind === 'beads') {
+        dip += beadCount(s) / 30 * 1.6;
+      } else if (s.d.kind === 'pill') {
+        dip += s.pillState === 'seated' ? stopW(s) * 0.27 : 0;
+      } else if (s.d.kind === 'lever') {
+        rot += s.tilt.x * 0.3;
+      }
+    }
+    spring(c.rot, rot, 120, 12, dt);
+    spring(c.dip, dip, 200, 16, dt);
+    c.el.style.transform = `translateY(${c.dip.x.toFixed(2)}px) rotate(${c.rot.x.toFixed(3)}deg)`;
+  }
+
+  function stepGhosts(dt) {
+    for (let i = ghosts.length - 1; i >= 0; i--) {
+      const g = ghosts[i];
+      g.t += dt; g.vy += g.g * dt; g.x += g.vx * dt; g.y += g.vy * dt;
+      const k = g.t / g.life, op = k < 0.6 ? 1 : Math.max(0, 1 - (k - 0.6) / 0.4);
+      if (g.kind === 'svg') { g.el.setAttribute('cx', g.x.toFixed(2)); g.el.setAttribute('cy', g.y.toFixed(2)); g.el.style.opacity = op; }
+      else { g.rot += g.vr * dt; const w = g.el.offsetWidth; g.el.style.transform = `translate(${(g.x - w / 2).toFixed(2)}px, ${(g.y - 8).toFixed(2)}px) rotate(${g.rot.toFixed(1)}deg)`; g.el.style.opacity = op; }
+      if (g.t >= g.life) { g.el.remove(); ghosts.splice(i, 1); }
+    }
+  }
+
+  const sliders = DEFS.map(build);
+  // Rope rows: the head's letters can each be knocked by a landing.
+  const splitLetters = (node) => { const t = node.textContent; node.textContent = ''; node.setAttribute('aria-label', t); return [...t].map((ch) => { const c = document.createElement('span'); c.className = 'ch'; c.setAttribute('aria-hidden', 'true'); c.textContent = ch === ' ' ? '\u00a0' : ch; node.append(c); return { el: c, x: 0, v: 0 }; }); };
+  sliders.filter((s) => s.d.rope).forEach((s) => { s.tchars = [...splitLetters($('n-' + s.d.id)), ...splitLetters($('v-' + s.d.id))]; });
+
+  /* ---------- Privacy: loose letters (Week 3) ----------
+     The card is a box; its labels' letters stand loose on their rows' floors. When the lever tips the card, they slide
+     downhill until they hit an invisible wall at the right end of the longest label, pile up and knock, and drift home
+     when it levels. The card moves first; the letters feel its tilt a moment later. Same constants as Week 3. */
+  function makeLoose(card, ids) {
+    const FRICTION = 0.12, SLIDE_G = 1500, HOME_K = 75, DAMP = 9, BOUNCE = 0.4, FOLLOW = 0.25;
+    const rows = ids.map((id) => {
+      const c = $(id), text = c.textContent; c.textContent = ''; c.setAttribute('aria-label', text);
+      const items = [];
+      [...text].forEach((chr) => {
+        const el = document.createElement('span'); el.setAttribute('aria-hidden', 'true');
+        if (chr === ' ') { el.className = 'sp'; c.append(el); return; }
+        el.className = 'ch'; el.textContent = chr; c.append(el);
+        items.push({ el, x0: 0, w: 0, u: 0, v: 0, fr: 0.04 + 0.22 * Math.random(), m: 0.7 + 0.6 * Math.random(), rs: Math.random() < 0.5 ? -1 : 1 });
+      });
+      return { c, items, wall: 0 };
+    });
+    function measure() {
+      let wall = 0;
+      rows.forEach((R) => { R.items.forEach((it) => { it.el.style.transform = ''; }); R.left = R.c.offsetLeft;
+        R.items.forEach((it) => { it.x0 = it.el.offsetLeft; it.w = it.el.offsetWidth; });
+        R.items.forEach((it, j) => { const nx = R.items[j + 1]; it.gap = nx ? nx.x0 - (it.x0 + it.w) : 0; });
+        wall = Math.max(wall, R.left + R.c.offsetWidth); });
+      rows.forEach((R) => { R.wall = wall; });                       // letters' x0 are in the card's coordinates, so is the wall
+    }
+    let felt = 0;
+    function step(dt) {
+      if (REDUCE) return;
+      felt += (card.rot.x - felt) * (1 - Math.exp(-dt / FOLLOW));
+      rows.forEach((R) => {
+        const sl = felt, its = R.items, n = its.length, press = Math.max(0, Math.abs(sl) - FRICTION);
+        its.forEach((it) => { it.overlap = it.gap > 1.5 ? -it.gap * Math.max(0.15, 1 - 0.38 * press) : Math.max(0, -it.gap) + 0.35 * press; });
+        for (const it of its) {
+          const a = SLIDE_G * it.m * Math.sign(sl) * Math.max(0, Math.abs(sl) - it.fr);
+          it.v += (a - HOME_K * it.u - DAMP * it.v) * dt; it.u += it.v * dt;
+        }
+        if (sl >= 0) for (let j = n - 1; j >= 0; j--) {                 // downhill to the right: pile against the wall
+          const it = its[j], limit = j === n - 1 ? R.wall : its[j + 1].x0 + its[j + 1].u + it.overlap, right = it.x0 + it.u + it.w;
+          if (right > limit) { it.u -= right - limit; const vA = j === n - 1 ? 0 : its[j + 1].v;
+            if (it.v > vA) { const rel = it.v - vA; if (j < n - 1) its[j + 1].v += rel * (1 + BOUNCE) / 2; it.v -= rel * (1 + BOUNCE) / (j === n - 1 ? 1 : 2); } }
+        }
+        else for (let j = 0; j < n; j++) {                              // downhill to the left: pile against the row's start
+          const it = its[j], limit = j === 0 ? R.left : its[j - 1].x0 + its[j - 1].u + its[j - 1].w - its[j - 1].overlap, left = it.x0 + it.u;
+          if (left < limit) { it.u += limit - left; const vB = j === 0 ? 0 : its[j - 1].v;
+            if (it.v < vB) { const rel = vB - it.v; if (j > 0) its[j - 1].v -= rel * (1 + BOUNCE) / 2; it.v += rel * (1 + BOUNCE) / (j === 0 ? 1 : 2); } }
+        }
+      });
+    }
+    function render() {
+      rows.forEach((R) => R.items.forEach((it) => {
+        const rot = Math.max(-2.5, Math.min(2.5, it.v * 0.02 * it.rs));
+        it.el.style.transform = (Math.abs(it.u) > 0.02 || Math.abs(rot) > 0.05) ? `translateX(${it.u.toFixed(2)}px) rotate(${rot.toFixed(2)}deg)` : '';
+      }));
+    }
+    measure(); addEventListener('resize', measure); if (document.fonts && document.fonts.ready) document.fonts.ready.then(measure);
+    return { step, render, rows };
+  }
+  const loose = makeLoose(cards.card3, ['n-range', 'n-prec']);
+  window.__loose = loose;
+
+  let last = performance.now();
+  function frame(now) {
+    let dt = Math.min(0.05, (now - last) / 1000) * speed;
+    last = now;
+    const n = Math.max(1, Math.ceil(dt / (1 / 240)));
+    const h = dt / n;
+    for (let i = 0; i < n; i++) {
+      for (const s of sliders) stepSlider(s, h);
+      for (const id in cards) stepCard(cards[id], h);
+      loose.step(h);
+      stepGhosts(h);
+    }
+    for (const s of sliders) { if (s.keyT > 0) s.keyT -= dt; render(s); }
+    loose.render();
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+
+  /* ---------- Controls ---------- */
+  $('slow').addEventListener('change', (e) => { speed = e.target.checked ? 0.25 : 1; });
+  $('reset').addEventListener('click', () => {
+    sliders.forEach((s) => { s.value = s.d.value; s.pressed = s.dragging = false; placeAt(s, true); });
+    for (const id in cards) { const c = cards[id]; c.rot.x = c.rot.v = c.dip.x = c.dip.v = 0; }
+    say('', false);
+  });
+  const spec = $('spec'), specBtn = $('spec-btn');
+  const setSpec = (open) => { spec.hidden = !open; specBtn.setAttribute('aria-expanded', open); };
+  specBtn.addEventListener('click', () => setSpec(spec.hidden));
+  $('spec-close').addEventListener('click', () => setSpec(false));
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') setSpec(false); });
+
+  window.__sliders = sliders; window.__cards = cards;
+})();
+</script>
+
+
+<script>
+  (() => {
+    const root = document.documentElement;
+    addEventListener('pointerdown', () => root.classList.add('pointer-mode'), true);
+    addEventListener('keydown', (e) => { if (!e.metaKey && !e.ctrlKey && !e.altKey) root.classList.remove('pointer-mode'); }, true);
+  })();
+</script>
+
+<script>
+(() => {
+  const stage = document.getElementById('stage'), track = document.getElementById('track');
+  const slides = [...track.children], prev = document.getElementById('prev'), next = document.getElementById('next');
+  let idx = 0;
+  const place = () => { const c = slides[idx].querySelector('.list').getBoundingClientRect(), sr = stage.getBoundingClientRect(); [prev, next].forEach((b) => b.style.top = (c.top - sr.top + c.height / 2).toFixed(1) + 'px'); };
+  function go(i) {
+    idx = Math.max(0, Math.min(slides.length - 1, i));
+    track.style.transform = `translateX(${-idx * 100}%)`;
+    slides.forEach((sl, k) => { sl.inert = k !== idx; sl.setAttribute('aria-hidden', k !== idx); });
+    prev.disabled = idx === 0; next.disabled = idx === slides.length - 1;
+    place();
+  }
+  prev.addEventListener('click', () => go(idx - 1)); next.addEventListener('click', () => go(idx + 1));
+  let sx = null, sdx = 0, sid = null;
+  stage.addEventListener('pointerdown', (e) => { if (e.button !== 0 || e.target.closest('.list, .nav')) return; sx = e.clientX; sdx = 0; sid = e.pointerId; stage.setPointerCapture(sid); track.classList.add('dragging'); });
+  stage.addEventListener('pointermove', (e) => { if (sx == null || e.pointerId !== sid) return; sdx = e.clientX - sx; const edge = (idx === 0 && sdx > 0) || (idx === slides.length - 1 && sdx < 0) ? 0.3 : 1; track.style.transform = `translateX(calc(${-idx * 100}% + ${sdx * edge}px))`; });
+  const end = () => { if (sx == null) return; track.classList.remove('dragging'); go(Math.abs(sdx) > Math.min(80, stage.clientWidth * 0.15) ? idx - Math.sign(sdx) : idx); sx = null; };
+  stage.addEventListener('pointerup', end); stage.addEventListener('pointercancel', end);
+  let acc = 0, lock = 0;
+  stage.addEventListener('wheel', (e) => { if (e.target.closest('.sl')) return; if (Math.abs(e.deltaX) <= Math.abs(e.deltaY)) return; e.preventDefault(); const now = performance.now(); if (now < lock) return; acc += e.deltaX; if (Math.abs(acc) > 60) { go(idx + Math.sign(acc)); acc = 0; lock = now + 500; } }, { passive: false });
+  document.addEventListener('keydown', (e) => { if (e.target.closest && e.target.closest('.ball, input, button, [role="slider"]')) return; if (e.key === 'ArrowRight') go(idx + 1); else if (e.key === 'ArrowLeft') go(idx - 1); });
+  addEventListener('resize', place);
+  go(0); requestAnimationFrame(place); setTimeout(place, 300);
+})();
+</script>
