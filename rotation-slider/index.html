@@ -210,10 +210,10 @@ html.pointer-mode #s-vol .ball:focus-visible { box-shadow: 0 0 0 2px var(--card)
         <dt>Dominoes</dt><dd>1 × 14 on a floor at y 30, one per 5 %</dd>
         <dt>Fallen row</dt><dd>front 15°, each behind lower, ≤ 76°</dd>
         <dt>Front domino</dt><dd>leans exactly as far as it's pushed</dd>
-        <dt>Line</dt><dd>1 × 46, #17181B, hung from the top</dd>
-        <dt>Hover</dt><dd>line lifts 5 off the floor, taps the next domino</dd>
+        <dt>Line</dt><dd>1 × 46, #17181B, fixed: never swings or lifts</dd>
+        <dt>Hover</dt><dd>the next domino shivers once</dd>
         <dt>Pressed</dt><dd>fill #E3E3E7</dd>
-        <dt>Drag</dt><dd>tape 1:1; line swings ≤ 9°; a 0.08–0.3° knock per domino</dd>
+        <dt>Drag</dt><dd>tape 1:1; a 0.08–0.3° knock per domino</dd>
         <dt>Bar / card tilt</dt><dd>right, 0 → 1.5° / 0.75° at 100</dd>
       </dl></div>
       <div class="spec-group" data-for="1"><h3>Domino Stacks</h3><dl>
@@ -730,8 +730,8 @@ html.pointer-mode #s-vol .ball:focus-visible { box-shadow: 0 0 0 2px var(--card)
         t.l.style.transform = t.a > 0.05 ? `rotate(${t.a.toFixed(2)}deg)` : '';
         t.l.style.transformOrigin = `${t.x}px ${FOOT}px`;
       }
-      rod.style.height = (46 + st.lift.x).toFixed(2) + 'px';
-      rod.style.transform = Math.abs(st.swing.x) > 0.01 ? `rotate(${st.swing.x.toFixed(3)}deg)` : '';
+      // the line stays put: no swing, no lift (the dominoes and the bar still react)
+      rod.style.height = '46px'; rod.style.transform = '';
       el.classList.toggle('is-hover', st.hover && !st.pressed && !st.dragging);
       el.classList.toggle('is-press', st.pressed && !st.moved);
       el.classList.toggle('is-drag', st.dragging && st.moved);
